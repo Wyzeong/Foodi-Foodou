@@ -3,8 +3,11 @@ import { icon } from "../icons.js";
 export function renderHome(main, { navigate }) {
   main.innerHTML = `
     <div class="home-hero">
-      <span class="stamp">— carnet de cuisine —</span>
-      <h1>MonCarnet</h1>
+      <div class="patch">
+        <span class="patch-icon">${icon("pot")}</span>
+        <h1>MonCarnet</h1>
+        <span class="stamp">— carnet de recettes —</span>
+      </div>
     </div>
     <div class="tile-grid">
       <button class="tile" data-go="week">

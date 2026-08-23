@@ -1,27 +1,54 @@
 /* =========================================================
-   MonCarnet — thème visuel unique, posé une fois ici.
-   Inspiration : carnet de recettes relié, papier chaud,
-   accent safran, vert profond. Pas de dépendance externe,
-   uniquement des polices système (contrainte 100% offline).
+   MonCarnet — thème "cosy tricoté".
+   Inspiré d'un carnet relié en laine bordeaux, écusson en
+   toile crème brodé, points de couture, bois chaleureux.
+   Variables posées une seule fois ici. Polices système
+   uniquement pour l'interface (contrainte 100% offline) ;
+   deux polices manuscrites sont embarquées localement
+   (fichiers dans /fonts, licence SIL Open Font License)
+   uniquement pour l'affichage "page de livre" des recettes.
    ========================================================= */
+
+@font-face {
+  font-family: "Caveat";
+  src: url("../fonts/Caveat-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Caveat";
+  src: url("../fonts/Caveat-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "PatrickHand";
+  src: url("../fonts/PatrickHand-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   /* Couleurs */
-  --color-bg: #FBF8F2;           /* papier chaud */
-  --color-bg-alt: #F2ECDD;       /* papier légèrement plus soutenu */
-  --color-surface: #FFFFFF;
-  --color-ink: #2B2620;          /* texte principal */
-  --color-ink-muted: #746C5E;    /* texte secondaire */
-  --color-primary: #2F4B3C;      /* vert profond (identité) */
-  --color-primary-dark: #1F3428;
-  --color-accent: #D9A441;       /* safran (accent unique) */
-  --color-accent-dark: #B9862C;
-  --color-line: #E4DCC8;         /* filets / séparateurs */
-  --color-danger: #B3452C;       /* brique, pour suppr/erreurs */
-  --color-today: #FCEFCF;        /* surbrillance jour actuel */
+  --color-bg: #F4E9D8;            /* lin/bois clair chaleureux */
+  --color-bg-alt: #EADCC3;        /* variante un peu plus soutenue */
+  --color-surface: #FBF3E4;       /* écusson en toile crème */
+  --color-ink: #3B2A1E;           /* brun encre, chaleureux */
+  --color-ink-muted: #8A7358;     /* brun doux pour texte secondaire */
+  --color-primary: #8C3A34;       /* rouge bordeaux tricoté (identité) */
+  --color-primary-dark: #6B2A26;
+  --color-accent: #C9974F;        /* ficelle jute / moutarde (accent unique) */
+  --color-accent-dark: #A87A38;
+  --color-line: #B08D5B;          /* fil de couture brun-doré */
+  --color-danger: #A8452F;        /* brique, pour suppr/erreurs */
+  --color-today: #F3DCC0;         /* surbrillance jour actuel, ton chaud */
 
-  /* Typographie — piles système uniquement (offline garanti) */
+  /* Typographie — piles système uniquement pour l'interface (offline garanti) */
   --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* Polices manuscrites embarquées, réservées à la page "livre" des recettes */
+  --font-manuscript-title: "Caveat", var(--font-display);
+  --font-manuscript-body: "PatrickHand", var(--font-body);
 
   /* Échelle */
   --space-1: 4px;
@@ -36,8 +63,8 @@
   --radius-m: 14px;
   --radius-l: 22px;
 
-  --shadow-card: 0 2px 10px rgba(43, 38, 32, 0.08);
-  --shadow-pop: 0 8px 28px rgba(43, 38, 32, 0.18);
+  --shadow-card: 0 3px 12px rgba(59, 42, 30, 0.16);
+  --shadow-pop: 0 10px 30px rgba(59, 42, 30, 0.28);
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
@@ -53,7 +80,10 @@ html, body {
 }
 
 body {
-  background: var(--color-bg);
+  /* Texture de fond "tricot" très discrète : fines rayures diagonales sur le lin */
+  background-color: var(--color-bg);
+  background-image:
+    repeating-linear-gradient(135deg, rgba(140, 58, 52, 0.035) 0px, rgba(140, 58, 52, 0.035) 2px, transparent 2px, transparent 10px);
   color: var(--color-ink);
   font-family: var(--font-body);
   -webkit-tap-highlight-color: transparent;
@@ -82,13 +112,18 @@ button {
 
 a { color: inherit; text-decoration: none; }
 
+/* Taille par défaut de toute icône SVG non explicitement dimensionnée
+   (évite le rendu à 300x150px par défaut du navigateur). Les règles
+   plus spécifiques (.icon-btn svg, .fab svg, etc.) continuent de primer. */
+svg { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; }
+
 #app {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
 }
 
-/* ---------- En-tête commun ---------- */
+/* ---------- En-tête commun (ruban tricoté) ---------- */
 .app-header {
   position: sticky;
   top: 0;
@@ -97,16 +132,23 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   gap: var(--space-3);
   padding: calc(var(--space-3) + var(--safe-top)) var(--space-4) var(--space-3);
-  background: var(--color-primary);
-  color: var(--color-bg);
+  background-color: var(--color-primary);
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 3px,
+    transparent 3px, transparent 9px
+  );
+  color: var(--color-surface);
   box-shadow: var(--shadow-card);
+  border-bottom: 3px dashed rgba(251, 243, 228, 0.35);
 }
 
 .app-header h1 {
-  color: var(--color-bg);
+  color: var(--color-surface);
   font-size: 1.2rem;
   flex: 1;
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .icon-btn {
@@ -116,10 +158,10 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  color: var(--color-bg);
+  color: var(--color-surface);
   flex-shrink: 0;
 }
-.icon-btn:active { background: rgba(255,255,255,0.15); }
+.icon-btn:active { background: rgba(255,255,255,0.18); }
 .icon-btn svg { width: 22px; height: 22px; }
 
 /* Bouton retour visible — nécessaire sur iOS où il n'y a pas de
@@ -134,21 +176,42 @@ main {
   margin: 0 auto;
 }
 
-/* ---------- Accueil ---------- */
+/* ---------- Accueil : écusson brodé façon "RECETTES" ---------- */
 .home-hero {
   text-align: center;
-  padding: var(--space-5) 0 var(--space-6);
+  padding: var(--space-6) 0 var(--space-6);
 }
-.home-hero .stamp {
+.home-hero .patch {
   display: inline-block;
+  background: var(--color-surface);
+  border: 3px dashed var(--color-line);
+  border-radius: 16px;
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.home-hero .patch-icon {
+  width: 34px;
+  height: 34px;
+  color: var(--color-primary);
+  margin-bottom: var(--space-2);
+}
+.home-hero .patch-icon svg { width: 100%; height: 100%; }
+.home-hero .stamp {
+  display: block;
   font-family: var(--font-display);
   font-style: italic;
   color: var(--color-ink-muted);
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  letter-spacing: 0.03em;
+  margin-top: var(--space-1);
 }
 .home-hero h1 {
-  font-size: 2rem;
+  font-size: 1.9rem;
   color: var(--color-primary-dark);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 2px 0 0;
 }
 
 .tile-grid {
@@ -161,8 +224,8 @@ main {
   align-items: center;
   gap: var(--space-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
-  border-left: 6px solid var(--color-accent);
+  border: 2px dashed var(--color-line);
+  border-left: 7px solid var(--color-primary);
   border-radius: var(--radius-m);
   padding: var(--space-5);
   box-shadow: var(--shadow-card);
@@ -175,6 +238,7 @@ main {
   flex-shrink: 0;
   color: var(--color-primary);
 }
+.tile .tile-icon svg { width: 100%; height: 100%; }
 .tile .tile-text h2 {
   font-size: 1.1rem;
   margin-bottom: 2px;
@@ -206,12 +270,12 @@ main {
   display: flex;
   align-items: stretch;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: 2px dashed var(--color-line);
   border-radius: var(--radius-m);
   overflow: hidden;
   box-shadow: var(--shadow-card);
 }
-.day-card.is-today { background: var(--color-today); border-color: var(--color-accent); }
+.day-card.is-today { background: var(--color-today); border-color: var(--color-primary); border-style: solid; }
 .day-date {
   width: 64px;
   flex-shrink: 0;
@@ -220,7 +284,7 @@ main {
   align-items: center;
   justify-content: center;
   padding: var(--space-3);
-  border-right: 1px solid var(--color-line);
+  border-right: 2px dashed var(--color-line);
 }
 .day-date .dow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-ink-muted); }
 .day-date .num { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-primary-dark); }
@@ -246,6 +310,7 @@ main {
   width: 40px; height: 40px; border-radius: var(--radius-s); background: var(--color-bg-alt);
   display:flex; align-items:center; justify-content:center; color: var(--color-ink-muted); flex-shrink:0;
 }
+.placeholder-thumb svg { width: 55%; height: 55%; }
 .day-body .recipe-name {
   font-weight: 600;
   white-space: nowrap;
@@ -267,9 +332,10 @@ main {
   min-width: 140px;
   padding: 10px var(--space-3);
   border-radius: var(--radius-s);
-  border: 1px solid var(--color-line);
+  border: 2px dashed var(--color-line);
   background: var(--color-surface);
   font-size: 0.95rem;
+  color: var(--color-ink);
 }
 .chip-row {
   display: flex;
@@ -286,7 +352,7 @@ main {
   padding: 6px 14px;
   border-radius: 999px;
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: 2px dashed var(--color-line);
   font-size: 0.82rem;
   color: var(--color-ink-muted);
   white-space: nowrap;
@@ -294,8 +360,11 @@ main {
 .chip.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--color-bg);
+  border-style: solid;
+  color: var(--color-surface);
 }
+.chip-x { display: inline-flex; vertical-align: middle; margin-left: 2px; }
+.chip-x svg { width: 11px; height: 11px; }
 
 .recipe-grid {
   display: grid;
@@ -304,7 +373,7 @@ main {
 }
 .recipe-card {
   background: var(--color-surface);
-  border: 1px solid var(--color-line);
+  border: 2px dashed var(--color-line);
   border-radius: var(--radius-m);
   overflow: hidden;
   box-shadow: var(--shadow-card);
@@ -320,7 +389,9 @@ main {
   justify-content: center;
   color: var(--color-ink-muted);
   overflow: hidden;
+  border-bottom: 2px dashed var(--color-line);
 }
+.recipe-card .thumb svg { width: 36%; height: 36%; }
 .recipe-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
 .recipe-card .info { padding: var(--space-3); }
 .recipe-card h3 {
@@ -339,19 +410,130 @@ main {
 }
 .empty-state svg { width: 64px; height: 64px; color: var(--color-line); margin-bottom: var(--space-3); }
 
-/* ---------- Fiche recette ---------- */
-.recipe-hero {
-  aspect-ratio: 16/9;
-  background: var(--color-bg-alt);
-  border-radius: var(--radius-m);
+/* ---------- Fiche recette : page de livre manuscrite ---------- */
+.recipe-photo-tape {
+  position: relative;
+  max-width: 340px;
+  margin: 0 auto var(--space-6);
+  transform: rotate(-2deg);
+}
+.recipe-photo-tape .frame {
+  aspect-ratio: 4/3;
+  background: var(--color-surface);
+  border: 8px solid var(--color-surface);
+  border-bottom-width: 28px;
+  box-shadow: var(--shadow-pop);
   overflow: hidden;
-  margin-bottom: var(--space-4);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-ink-muted);
 }
-.recipe-hero img { width: 100%; height: 100%; object-fit: cover; }
+.recipe-photo-tape .frame img { width: 100%; height: 100%; object-fit: cover; }
+.recipe-photo-tape .tape {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%) rotate(2deg);
+  width: 90px;
+  height: 28px;
+  background: rgba(201, 151, 79, 0.55);
+  box-shadow: 0 2px 4px rgba(59,42,30,0.2);
+}
+
+.book-spread {
+  position: relative;
+}
+
+.manuscript-page {
+  background-color: #F8EFDE;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 30px,
+    rgba(140, 58, 52, 0.09) 30px, rgba(140, 58, 52, 0.09) 31px
+  );
+  border: 1px solid rgba(59, 42, 30, 0.18);
+  border-radius: 4px 16px 16px 4px;
+  box-shadow: var(--shadow-card);
+  position: relative;
+  padding: var(--space-5) var(--space-4) var(--space-5) 40px;
+  margin-bottom: var(--space-4);
+}
+.manuscript-page::before {
+  /* filet rouge de marge, façon cahier d'écolier */
+  content: "";
+  position: absolute;
+  left: 26px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(168, 69, 47, 0.3);
+}
+
+.manuscript-title {
+  font-family: var(--font-manuscript-title);
+  font-weight: 700;
+  font-size: 2.5rem;
+  line-height: 1.05;
+  color: var(--color-primary-dark);
+  transform: rotate(-1deg);
+  margin: 0 0 var(--space-2);
+}
+
+.manuscript-section-title {
+  font-family: var(--font-manuscript-title);
+  font-weight: 700;
+  font-size: 1.6rem;
+  color: var(--color-accent-dark);
+  margin: 0 0 var(--space-3);
+  display: inline-block;
+  transform: rotate(-0.5deg);
+}
+
+.manuscript-body, .manuscript-body li {
+  font-family: var(--font-manuscript-body);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  color: var(--color-ink);
+}
+
+.ingredient-list, .step-list {
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.ingredient-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 6px 0;
+  border-bottom: 1px dotted rgba(59, 42, 30, 0.25);
+}
+.ingredient-list li:nth-child(even) { transform: rotate(0.25deg); }
+.ingredient-list li:nth-child(odd) { transform: rotate(-0.2deg); }
+.ingredient-list li .qty { color: var(--color-primary-dark); flex-shrink: 0; margin-left: var(--space-3); white-space: nowrap; }
+
+.step-list li {
+  display: flex;
+  gap: var(--space-2);
+  padding: 7px 0;
+  align-items: baseline;
+}
+.step-list li:nth-child(even) { transform: rotate(0.2deg); }
+.step-list li:nth-child(odd) { transform: rotate(-0.25deg); }
+.step-list .step-bullet {
+  color: var(--color-accent-dark);
+  font-size: 1.3em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.manuscript-note {
+  font-family: var(--font-manuscript-body);
+  font-size: 1.05rem;
+  color: var(--color-ink-muted);
+  font-style: italic;
+}
+
 .tag-row {
   display: flex;
   gap: var(--space-2);
@@ -362,41 +544,51 @@ main {
   padding: 4px 12px;
   border-radius: 999px;
   background: var(--color-bg-alt);
+  border: 1px dashed var(--color-line);
   color: var(--color-primary-dark);
   font-size: 0.78rem;
+  font-weight: 600;
 }
+
+/* Titre de section générique (Paramètres, etc. — hors page manuscrite) */
 .section-title {
   font-family: var(--font-display);
   font-size: 1.15rem;
   margin: var(--space-5) 0 var(--space-3);
   padding-bottom: var(--space-2);
-  border-bottom: 2px solid var(--color-accent);
+  border-bottom: 3px dashed var(--color-accent);
   display: inline-block;
 }
-.ingredient-list, .step-list {
-  list-style: none;
-  margin: 0; padding: 0;
+
+/* Livre ouvert sur tablette/desktop large : deux pages côte à côte */
+@media (min-width: 760px) {
+  .book-spread {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    align-items: start;
+  }
+  .book-spread::before {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 44px;
+    margin-left: -22px;
+    background: linear-gradient(to right, rgba(59,42,30,0.14), transparent 45%, transparent 55%, rgba(59,42,30,0.14));
+    pointer-events: none;
+    z-index: 2;
+  }
+  .book-spread .manuscript-page.page-left {
+    border-radius: 16px 4px 4px 16px;
+    margin-right: 0;
+  }
+  .book-spread .manuscript-page.page-right {
+    border-radius: 4px 16px 16px 4px;
+    margin-left: 0;
+  }
 }
-.ingredient-list li {
-  display: flex;
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-  border-bottom: 1px dashed var(--color-line);
-}
-.ingredient-list li .qty { color: var(--color-ink-muted); flex-shrink: 0; margin-left: var(--space-3); }
-.step-list li {
-  display: flex;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-  border-bottom: 1px dashed var(--color-line);
-}
-.step-list .step-num {
-  font-family: var(--font-display);
-  color: var(--color-accent-dark);
-  font-weight: bold;
-  flex-shrink: 0;
-  width: 24px;
-}
+
 
 /* ---------- Formulaires ---------- */
 .field { margin-bottom: var(--space-4); }
@@ -411,10 +603,11 @@ main {
   width: 100%;
   padding: 10px var(--space-3);
   border-radius: var(--radius-s);
-  border: 1px solid var(--color-line);
+  border: 2px dashed var(--color-line);
   background: var(--color-surface);
   font-family: inherit;
   font-size: 0.98rem;
+  color: var(--color-ink);
 }
 .field textarea { min-height: 90px; resize: vertical; }
 .repeat-row {
@@ -441,7 +634,7 @@ main {
 
 .tab-row {
   display: flex;
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 3px dashed var(--color-line);
   margin-bottom: var(--space-4);
 }
 .tab-btn {
@@ -452,10 +645,11 @@ main {
   font-weight: 600;
   font-size: 0.9rem;
   border-bottom: 3px solid transparent;
+  margin-bottom: -3px;
 }
 .tab-btn.active {
   color: var(--color-primary-dark);
-  border-bottom-color: var(--color-accent);
+  border-bottom-color: var(--color-primary);
 }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
@@ -471,11 +665,11 @@ main {
   font-weight: 600;
   font-size: 0.95rem;
 }
-.btn-primary { background: var(--color-primary); color: var(--color-bg); }
+.btn-primary { background: var(--color-primary); color: var(--color-surface); }
 .btn-primary:active { background: var(--color-primary-dark); }
 .btn-accent { background: var(--color-accent); color: var(--color-primary-dark); }
-.btn-outline { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink); }
-.btn-danger { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
+.btn-outline { background: var(--color-surface); border: 2px dashed var(--color-line); color: var(--color-ink); }
+.btn-danger { background: var(--color-surface); color: var(--color-danger); border: 2px dashed var(--color-danger); }
 .btn-block { display: flex; width: 100%; }
 .btn-row { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
 .btn-row .btn { flex: 1; }
@@ -493,18 +687,19 @@ main {
   align-items: center;
   justify-content: center;
   z-index: 15;
+  border: 2px dashed rgba(255,255,255,0.5);
 }
 .fab svg { width: 26px; height: 26px; }
 .fab:active { transform: scale(0.95); }
 
 /* ---------- Paramètres ---------- */
-.settings-list { list-style: none; padding: 0; margin: 0 0 var(--space-6); background: var(--color-surface); border-radius: var(--radius-m); border: 1px solid var(--color-line); overflow: hidden; }
+.settings-list { list-style: none; padding: 0; margin: 0 0 var(--space-6); background: var(--color-surface); border-radius: var(--radius-m); border: 2px dashed var(--color-line); overflow: hidden; }
 .settings-list li {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: var(--space-4);
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px dashed var(--color-line);
 }
 .settings-list li:last-child { border-bottom: none; }
 .settings-list .label { font-weight: 600; }
@@ -519,7 +714,7 @@ main {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(31, 27, 20, 0.5);
+  background: rgba(59, 42, 30, 0.55);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -531,12 +726,15 @@ main {
   width: 100%;
   max-width: 640px;
   border-radius: var(--radius-l) var(--radius-l) 0 0;
+  border-top: 3px dashed var(--color-line);
   padding: var(--space-5) var(--space-4) calc(var(--space-5) + var(--safe-bottom));
   box-shadow: var(--shadow-pop);
   animation: slideUp 0.2s ease;
 }
 .modal-sheet.center {
   border-radius: var(--radius-l);
+  border-top: none;
+  border: 3px dashed var(--color-line);
   margin-bottom: auto;
   margin-top: auto;
 }
@@ -552,7 +750,7 @@ main {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-3);
-  border-bottom: 1px solid var(--color-line);
+  border-bottom: 1px dashed var(--color-line);
   text-align: left;
 }
 .recipe-pick-item .placeholder-thumb, .recipe-pick-item img {
@@ -566,8 +764,8 @@ main {
   left: 50%;
   bottom: calc(var(--space-6) + var(--safe-bottom));
   transform: translateX(-50%);
-  background: var(--color-ink);
-  color: var(--color-bg);
+  background: var(--color-primary-dark);
+  color: var(--color-surface);
   padding: var(--space-3) var(--space-5);
   border-radius: 999px;
   font-size: 0.88rem;
@@ -575,13 +773,14 @@ main {
   z-index: 200;
   max-width: 90vw;
   text-align: center;
+  border: 2px dashed rgba(251, 243, 228, 0.4);
 }
 
 /* ---------- Utilitaires ---------- */
 .hidden { display: none !important; }
 .spinner {
   width: 18px; height: 18px;
-  border: 2px solid rgba(0,0,0,0.15);
+  border: 2px solid rgba(59, 42, 30, 0.15);
   border-top-color: var(--color-primary);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;

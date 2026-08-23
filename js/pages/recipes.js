@@ -1,22 +1,22 @@
 import { icon } from "../icons.js";
-import { getAllRecipes, getAllIngredientNames } from "../db.js";
+import { getAllRecipes, getAllSearchTags } from "../db.js";
 import { escapeHTML } from "../ui.js";
 
 export async function renderRecipes(main, { navigate }) {
-  const [recipes, ingredientNames] = await Promise.all([getAllRecipes(), getAllIngredientNames()]);
+  const [recipes, searchTags] = await Promise.all([getAllRecipes(), getAllSearchTags()]);
 
   let query = "";
-  let activeIngredient = null;
+  let activeTag = null; // en minuscules
 
   main.innerHTML = `
     <div class="toolbar">
       <input class="search-input" type="text" placeholder="Rechercher une recette..." id="search-input" />
     </div>
     ${
-      ingredientNames.length
+      searchTags.length
         ? `<div class="chip-row" id="chip-row">
-            <button class="chip" data-ing="">Tous les ingrédients</button>
-            ${ingredientNames.map((n) => `<button class="chip" data-ing="${escapeHTML(n)}">${escapeHTML(n)}</button>`).join("")}
+            <button class="chip" data-tag="">Tous les #tags</button>
+            ${searchTags.map((t) => `<button class="chip" data-tag="${escapeHTML(t.toLowerCase())}">#${escapeHTML(t)}</button>`).join("")}
           </div>`
         : ""
     }
@@ -27,17 +27,22 @@ export async function renderRecipes(main, { navigate }) {
   const searchInput = main.querySelector("#search-input");
   const chipRow = main.querySelector("#chip-row");
 
+  function recipeMatchesTag(r, tagLower) {
+    if ((r.tags || []).some((t) => String(t).toLowerCase() === tagLower)) return true;
+    if ((r.ingredients || []).some((i) => String(i.name).toLowerCase() === tagLower)) return true;
+    return false;
+  }
+
   function draw() {
     let filtered = recipes;
-    if (activeIngredient) {
-      filtered = filtered.filter((r) =>
-        (r.ingredients || []).some((i) => i.name && i.name.toLowerCase() === activeIngredient.toLowerCase())
-      );
+    if (activeTag) {
+      filtered = filtered.filter((r) => recipeMatchesTag(r, activeTag));
     }
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       filtered = filtered.filter((r) => {
         if (r.title.toLowerCase().includes(q)) return true;
+        if ((r.tags || []).some((t) => t.toLowerCase().includes(q))) return true;
         return (r.ingredients || []).some((i) => i.name && i.name.toLowerCase().includes(q));
       });
     }
@@ -77,15 +82,15 @@ export async function renderRecipes(main, { navigate }) {
   });
 
   if (chipRow) {
-    chipRow.querySelectorAll("[data-ing]").forEach((chip) => {
+    chipRow.querySelectorAll("[data-tag]").forEach((chip) => {
       chip.addEventListener("click", () => {
-        activeIngredient = chip.dataset.ing || null;
+        activeTag = chip.dataset.tag || null;
         chipRow.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
         chip.classList.add("active");
         draw();
       });
     });
-    chipRow.querySelector('[data-ing=""]').classList.add("active");
+    chipRow.querySelector('[data-tag=""]').classList.add("active");
   }
 
   draw();

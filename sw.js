@@ -6,7 +6,7 @@
 // publiée : c'est ce qui force la mise à jour du cache et donc
 // la mise à jour de l'app installée sur le téléphone.
 // ============================================================
-const CACHE_VERSION = "1.0.0";
+const CACHE_VERSION = "1.2.0";
 const CACHE_NAME = `moncarnet-cache-v${CACHE_VERSION}`;
 
 // Les chemins ci-dessous sont relatifs à la position de ce fichier,
@@ -34,6 +34,9 @@ const PRECACHE_URLS = [
   "./icons/icon-maskable-192.png",
   "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png",
+  "./fonts/Caveat-Bold.woff2",
+  "./fonts/Caveat-SemiBold.woff2",
+  "./fonts/PatrickHand-Regular.woff2",
 ];
 
 self.addEventListener("install", (event) => {

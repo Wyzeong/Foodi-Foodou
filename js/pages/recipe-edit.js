@@ -7,6 +7,24 @@ function uid() {
   return Math.random().toString(36).slice(2, 8);
 }
 
+// Unités courantes proposées à la saisie (avec repli "Autre..." en texte libre)
+const UNIT_OPTIONS = [
+  "g", "kg", "mg", "ml", "cl", "l",
+  "c. à café", "c. à soupe", "pincée",
+  "unité", "tranche", "gousse", "botte", "sachet",
+  "verre", "tasse", "pot", "boîte", "feuille", "brin", "bouquet",
+];
+
+// Étiquettes suggérées en un clic, en plus des tags personnalisés
+const SUGGESTED_TAGS = [
+  "végétarien", "vegan", "sans gluten", "chaud", "froid",
+  "apéritif", "entrée", "plat", "dessert", "rapide", "économique",
+];
+
+function normalizeTag(t) {
+  return String(t || "").trim().replace(/^#+/, "");
+}
+
 function stripHTML(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   doc.querySelectorAll("script, style, nav, header, footer, noscript").forEach((n) => n.remove());
@@ -35,7 +53,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
   const state = {
     id: existing?.id || null,
     title: existing?.title || "",
-    tags: existing?.tags?.join(", ") || "",
+    tags: existing?.tags?.length ? [...existing.tags] : [],
     image: existing?.image || null,
     notes: existing?.notes || "",
     ingredients: existing?.ingredients?.length ? existing.ingredients.map((i) => ({ ...i, _key: uid() })) : [{ name: "", quantity: "", unit: "", _key: uid() }],
@@ -61,21 +79,28 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
         <label>Titre</label>
         <input type="text" id="f-title" value="${escapeHTML(state.title)}" placeholder="Ex : Tarte aux pommes" />
       </div>
+
       <div class="field">
-        <label>Étiquettes (séparées par une virgule)</label>
-        <input type="text" id="f-tags" value="${escapeHTML(state.tags)}" placeholder="Ex : dessert, rapide, végétarien" />
+        <label>Étiquettes</label>
+        <div id="tag-chips" class="chip-row" style="margin-bottom:var(--space-2);"></div>
+        <div class="repeat-row">
+          <input type="text" id="tag-input" placeholder="Ajouter une étiquette..." />
+          <button class="btn btn-outline" id="tag-add-btn" type="button" style="flex-shrink:0;">${icon("plus")}</button>
+        </div>
+        <div id="tag-suggestions" class="chip-row" style="margin-top:var(--space-2);"></div>
       </div>
 
       <div class="field">
         <label>Ingrédients</label>
         <div id="ingredients-rows"></div>
         <button class="link-btn" id="add-ingredient" type="button">${icon("plus")} Ajouter un ingrédient</button>
+        <p style="font-size:0.78rem;color:var(--color-ink-muted);margin-top:4px;">Chaque ingrédient devient automatiquement une étiquette de recherche.</p>
       </div>
 
       <div class="field">
-        <label>Étapes</label>
+        <label>Instructions</label>
         <div id="steps-rows"></div>
-        <button class="link-btn" id="add-step" type="button">${icon("plus")} Ajouter une étape</button>
+        <button class="link-btn" id="add-step" type="button">${icon("plus")} Ajouter une instruction</button>
       </div>
 
       <div class="field">
@@ -157,19 +182,84 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
     reader.readAsDataURL(file);
   });
 
+  // ---------- Étiquettes (tags) ----------
+  const tagChipsEl = main.querySelector("#tag-chips");
+  const tagSuggestEl = main.querySelector("#tag-suggestions");
+  const tagInput = main.querySelector("#tag-input");
+
+  function drawTags() {
+    tagChipsEl.innerHTML = state.tags.length
+      ? state.tags
+          .map(
+            (t) => `<button type="button" class="chip active" data-remove-tag="${escapeHTML(t)}">#${escapeHTML(t)} ${icon("close", "chip-x")}</button>`
+          )
+          .join("")
+      : `<span style="font-size:0.85rem;color:var(--color-ink-muted);">Aucune étiquette pour l'instant</span>`;
+
+    tagChipsEl.querySelectorAll("[data-remove-tag]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.tags = state.tags.filter((t) => t !== btn.dataset.removeTag);
+        drawTags();
+        drawSuggestions();
+      });
+    });
+
+    drawSuggestions();
+  }
+
+  function drawSuggestions() {
+    const lowerTags = state.tags.map((t) => t.toLowerCase());
+    tagSuggestEl.innerHTML = SUGGESTED_TAGS
+      .map((s) => `<button type="button" class="chip${lowerTags.includes(s.toLowerCase()) ? " active" : ""}" data-suggest="${escapeHTML(s)}">#${escapeHTML(s)}</button>`)
+      .join("");
+    tagSuggestEl.querySelectorAll("[data-suggest]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tag = btn.dataset.suggest;
+        const already = state.tags.some((t) => t.toLowerCase() === tag.toLowerCase());
+        state.tags = already ? state.tags.filter((t) => t.toLowerCase() !== tag.toLowerCase()) : [...state.tags, tag];
+        drawTags();
+      });
+    });
+  }
+
+  function addTagFromInput() {
+    const tag = normalizeTag(tagInput.value);
+    if (!tag) return;
+    if (!state.tags.some((t) => t.toLowerCase() === tag.toLowerCase())) {
+      state.tags.push(tag);
+      drawTags();
+    }
+    tagInput.value = "";
+    tagInput.focus();
+  }
+  main.querySelector("#tag-add-btn").addEventListener("click", addTagFromInput);
+  tagInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addTagFromInput(); }
+  });
+  drawTags();
+
   // ---------- Ingrédients dynamiques ----------
   const ingRows = main.querySelector("#ingredients-rows");
   function drawIngredients() {
     ingRows.innerHTML = state.ingredients
-      .map(
-        (ing) => `
+      .map((ing) => {
+        const isCustomUnit = ing.unit && !UNIT_OPTIONS.includes(ing.unit);
+        return `
       <div class="repeat-row" data-key="${ing._key}">
         <input type="text" class="ing-name" placeholder="Ingrédient" value="${escapeHTML(ing.name)}" />
         <input type="text" class="qty-input ing-qty" placeholder="Qté" value="${escapeHTML(ing.quantity)}" />
-        <input type="text" class="unit-input ing-unit" placeholder="Unité" value="${escapeHTML(ing.unit)}" />
+        ${
+          isCustomUnit || ing._customUnit
+            ? `<input type="text" class="unit-input ing-unit-custom" placeholder="Unité" value="${escapeHTML(ing.unit)}" />`
+            : `<select class="unit-input ing-unit-select">
+                <option value="">Unité</option>
+                ${UNIT_OPTIONS.map((u) => `<option value="${u}" ${ing.unit === u ? "selected" : ""}>${u}</option>`).join("")}
+                <option value="__custom__">Autre...</option>
+              </select>`
+        }
         <button class="remove-row-btn" type="button" data-remove="${ing._key}">${icon("close")}</button>
-      </div>`
-      )
+      </div>`;
+      })
       .join("");
 
     ingRows.querySelectorAll(".repeat-row").forEach((row) => {
@@ -177,7 +267,22 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       const ing = state.ingredients.find((i) => i._key === key);
       row.querySelector(".ing-name").addEventListener("input", (e) => (ing.name = e.target.value));
       row.querySelector(".ing-qty").addEventListener("input", (e) => (ing.quantity = e.target.value));
-      row.querySelector(".ing-unit").addEventListener("input", (e) => (ing.unit = e.target.value));
+      const unitSelect = row.querySelector(".ing-unit-select");
+      if (unitSelect) {
+        unitSelect.addEventListener("change", (e) => {
+          if (e.target.value === "__custom__") {
+            ing._customUnit = true;
+            ing.unit = "";
+            drawIngredients();
+          } else {
+            ing.unit = e.target.value;
+          }
+        });
+      }
+      const unitCustom = row.querySelector(".ing-unit-custom");
+      if (unitCustom) {
+        unitCustom.addEventListener("input", (e) => (ing.unit = e.target.value));
+      }
     });
     ingRows.querySelectorAll("[data-remove]").forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -193,14 +298,15 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
     drawIngredients();
   });
 
-  // ---------- Étapes dynamiques ----------
+  // ---------- Instructions dynamiques (puces) ----------
   const stepRows = main.querySelector("#steps-rows");
   function drawSteps() {
     stepRows.innerHTML = state.steps
       .map(
         (s, i) => `
       <div class="repeat-row" data-key="${s._key}">
-        <textarea class="step-text" style="min-height:44px;" placeholder="Étape ${i + 1}">${escapeHTML(s.text)}</textarea>
+        <span style="flex-shrink:0;color:var(--color-accent-dark);font-size:1.3em;line-height:2.4;">•</span>
+        <textarea class="step-text" style="min-height:44px;" placeholder="Instruction ${i + 1}">${escapeHTML(s.text)}</textarea>
         <button class="remove-row-btn" type="button" data-remove="${s._key}">${icon("close")}</button>
       </div>`
       )
@@ -347,8 +453,12 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       main.querySelector("#f-title").value = data.title;
     }
     if (Array.isArray(data.tags) && data.tags.length) {
-      state.tags = data.tags.join(", ");
-      main.querySelector("#f-tags").value = state.tags;
+      const existingLower = state.tags.map((t) => t.toLowerCase());
+      for (const t of data.tags) {
+        const clean = normalizeTag(t);
+        if (clean && !existingLower.includes(clean.toLowerCase())) state.tags.push(clean);
+      }
+      drawTags();
     }
     if (Array.isArray(data.ingredients) && data.ingredients.length) {
       state.ingredients = data.ingredients.map((i) => ({
@@ -373,7 +483,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       main.querySelector("#f-title").focus();
       return;
     }
-    const tags = main.querySelector("#f-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
+    const tags = state.tags.map(normalizeTag).filter(Boolean);
     const notes = main.querySelector("#f-notes").value;
     const ingredients = state.ingredients
       .filter((i) => i.name.trim())

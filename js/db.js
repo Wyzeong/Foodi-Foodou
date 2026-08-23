@@ -108,6 +108,25 @@ export async function getAllIngredientNames() {
   return Array.from(set).sort((a, b) => a.localeCompare(b, "fr"));
 }
 
+/** Liste unique combinant étiquettes manuelles et noms d'ingrédients, pour la
+ *  recherche/filtrage par #tag dans le livre de recettes. Dédoublonnée sans
+ *  tenir compte de la casse (garde la première graphie rencontrée). */
+export async function getAllSearchTags() {
+  const recipes = await getAllRecipes();
+  const seen = new Map(); // clé en minuscules -> graphie d'origine
+  for (const r of recipes) {
+    for (const t of r.tags || []) {
+      const clean = String(t || "").trim();
+      if (clean && !seen.has(clean.toLowerCase())) seen.set(clean.toLowerCase(), clean);
+    }
+    for (const ing of r.ingredients || []) {
+      const clean = String(ing.name || "").trim();
+      if (clean && !seen.has(clean.toLowerCase())) seen.set(clean.toLowerCase(), clean);
+    }
+  }
+  return Array.from(seen.values()).sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 // ---------------- Menu de la semaine ----------------
 
 /** entry: { date: "YYYY-MM-DD", recipeId } */

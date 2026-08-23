@@ -10,28 +10,57 @@ export async function renderRecipeDetail(main, { navigate, params, back }) {
     return;
   }
 
+  const hasImage = !!recipe.image;
+
   main.innerHTML = `
-    <div class="recipe-hero">${recipe.image ? `<img src="${recipe.image}" alt="">` : icon("book")}</div>
-    <h1>${escapeHTML(recipe.title)}</h1>
-    ${recipe.tags && recipe.tags.length ? `<div class="tag-row">${recipe.tags.map((t) => `<span class="tag">${escapeHTML(t)}</span>`).join("")}</div>` : ""}
+    ${
+      hasImage
+        ? `<div class="recipe-photo-tape">
+            <span class="tape"></span>
+            <div class="frame"><img src="${recipe.image}" alt=""></div>
+          </div>`
+        : ""
+    }
 
-    ${recipe.notes ? `<p style="color:var(--color-ink-muted)">${escapeHTML(recipe.notes)}</p>` : ""}
+    <h1 class="manuscript-title" style="text-align:center;">${escapeHTML(recipe.title)}</h1>
 
-    <h2 class="section-title">Ingrédients</h2>
-    <ul class="ingredient-list">
-      ${(recipe.ingredients || [])
-        .map(
-          (i) => `<li><span>${escapeHTML(i.name)}</span><span class="qty">${escapeHTML(i.quantity || "")} ${escapeHTML(i.unit || "")}</span></li>`
-        )
-        .join("") || "<li>Aucun ingrédient renseigné.</li>"}
-    </ul>
+    ${
+      recipe.tags && recipe.tags.length
+        ? `<div class="tag-row" style="justify-content:center;">${recipe.tags.map((t) => `<span class="tag">#${escapeHTML(t)}</span>`).join("")}</div>`
+        : ""
+    }
 
-    <h2 class="section-title">Étapes</h2>
-    <ol class="step-list" style="list-style:none;padding:0;">
-      ${(recipe.steps || [])
-        .map((s, i) => `<li><span class="step-num">${i + 1}</span><span>${escapeHTML(s)}</span></li>`)
-        .join("") || "<li>Aucune étape renseignée.</li>"}
-    </ol>
+    <div class="book-spread">
+      <div class="manuscript-page page-left">
+        <h2 class="manuscript-section-title">Ingrédients</h2>
+        <ul class="ingredient-list manuscript-body">
+          ${
+            (recipe.ingredients || [])
+              .map(
+                (i) => `<li><span>${escapeHTML(i.name)}</span><span class="qty">${escapeHTML(i.quantity || "")} ${escapeHTML(i.unit || "")}</span></li>`
+              )
+              .join("") || "<li>Aucun ingrédient renseigné.</li>"
+          }
+        </ul>
+      </div>
+
+      <div class="manuscript-page page-right">
+        <h2 class="manuscript-section-title">Instructions</h2>
+        <ul class="step-list manuscript-body">
+          ${
+            (recipe.steps || [])
+              .map((s) => `<li><span class="step-bullet">•</span><span>${escapeHTML(s)}</span></li>`)
+              .join("") || "<li>Aucune instruction renseignée.</li>"
+          }
+        </ul>
+      </div>
+    </div>
+
+    ${
+      recipe.notes
+        ? `<div class="manuscript-page"><p class="manuscript-note" style="margin:0;">${escapeHTML(recipe.notes)}</p></div>`
+        : ""
+    }
 
     ${
       recipe.transcript
@@ -40,7 +69,7 @@ export async function renderRecipeDetail(main, { navigate, params, back }) {
     }
     ${
       recipe.source && recipe.source.url
-        ? `<p style="margin-top:var(--space-4);font-size:0.85rem;"><a href="${escapeHTML(recipe.source.url)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;">Source d'origine ↗</a></p>`
+        ? `<p style="margin-top:var(--space-4);font-size:0.85rem;text-align:center;"><a href="${escapeHTML(recipe.source.url)}" target="_blank" rel="noopener" style="color:var(--color-primary);text-decoration:underline;">Source d'origine ↗</a></p>`
         : ""
     }
 
