@@ -291,11 +291,27 @@ main {
 .day-body {
   flex: 1;
   display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.meal-row {
+  display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) var(--space-4);
   gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   min-width: 0;
+  width: 100%;
+  text-align: left;
+}
+.meal-row + .meal-row { border-top: 1px dashed var(--color-line); }
+.meal-row .meal-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-muted);
+  width: 34px;
+  flex-shrink: 0;
 }
 .day-body .assigned {
   display: flex;
@@ -616,9 +632,13 @@ main {
   margin-bottom: var(--space-2);
   align-items: center;
 }
-.repeat-row input { flex: 1; }
-.repeat-row .qty-input { width: 70px; flex: none; }
-.repeat-row .unit-input { width: 80px; flex: none; }
+/* Spécificité renforcée (préfixe .field répété) pour l'emporter sur la règle
+   générale ".field input[type=text] { width:100% }" des formulaires, qui
+   sinon écrase la largeur voulue ici (nom flexible, quantité/unité fixes). */
+.field .repeat-row input.ing-name { flex: 1; width: auto; min-width: 0; }
+.field .repeat-row input.qty-input { width: 70px; flex: none; }
+.field .repeat-row input.unit-input,
+.field .repeat-row select.unit-input { width: 90px; flex: none; }
 .link-btn {
   color: var(--color-primary);
   font-weight: 600;

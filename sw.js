@@ -6,7 +6,7 @@
 // publiée : c'est ce qui force la mise à jour du cache et donc
 // la mise à jour de l'app installée sur le téléphone.
 // ============================================================
-const CACHE_VERSION = "1.2.0";
+const CACHE_VERSION = "1.3.1";
 const CACHE_NAME = `moncarnet-cache-v${CACHE_VERSION}`;
 
 // Les chemins ci-dessous sont relatifs à la position de ce fichier,

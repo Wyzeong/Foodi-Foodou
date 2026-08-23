@@ -86,12 +86,17 @@ export async function saveRecipe(recipe) {
 export async function deleteRecipe(id) {
   const store = await tx(STORE_RECIPES, "readwrite");
   await wrapRequest(store.delete(id));
-  // Nettoyage : retirer cette recette du menu de la semaine si assignée
+  // Nettoyage : retirer cette recette du menu de la semaine si assignée (midi ou soir)
   const weekStore = await tx(STORE_WEEK, "readwrite");
   const all = await wrapRequest(weekStore.getAll());
-  for (const entry of all) {
-    if (entry.recipeId === id) {
-      await wrapRequest(weekStore.delete(entry.date));
+  for (const raw of all) {
+    const entry = normalizeWeekEntry(raw);
+    let changed = false;
+    if (entry.midi && entry.midi.type === "recipe" && entry.midi.recipeId === id) { entry.midi = null; changed = true; }
+    if (entry.soir && entry.soir.type === "recipe" && entry.soir.recipeId === id) { entry.soir = null; changed = true; }
+    if (changed) {
+      if (!entry.midi && !entry.soir) await wrapRequest(weekStore.delete(entry.date));
+      else await wrapRequest(weekStore.put(entry));
     }
   }
 }
@@ -128,32 +133,57 @@ export async function getAllSearchTags() {
 }
 
 // ---------------- Menu de la semaine ----------------
+//
+// Un repas ("meal") est soit :
+//   { type: "recipe", recipeId }
+//   { type: "custom", label }   — menu libre sans recette (ex: "Coquillettes jambon")
+// Chaque jour a deux créneaux : midi / soir.
+// Ancien format (avant la distinction midi/soir) : { date, recipeId } — on le
+// migre automatiquement à la lecture en le plaçant sur le créneau "soir".
 
-/** entry: { date: "YYYY-MM-DD", recipeId } */
-export async function setDayRecipe(date, recipeId) {
+function normalizeWeekEntry(raw) {
+  if (!raw) return null;
+  if (Object.prototype.hasOwnProperty.call(raw, "midi") || Object.prototype.hasOwnProperty.call(raw, "soir")) {
+    return { date: raw.date, midi: raw.midi || null, soir: raw.soir || null };
+  }
+  // Format hérité : { date, recipeId } — traité comme un repas du soir
+  if (raw.recipeId) {
+    return { date: raw.date, midi: null, soir: { type: "recipe", recipeId: raw.recipeId } };
+  }
+  return { date: raw.date, midi: null, soir: null };
+}
+
+/** Affecte (ou efface avec value=null) le repas d'un créneau donné ("midi"/"soir") pour une date. */
+export async function setMealSlot(date, slot, value) {
   const store = await tx(STORE_WEEK, "readwrite");
-  if (!recipeId) {
+  const raw = await wrapRequest(store.get(date));
+  const entry = normalizeWeekEntry(raw) || { date, midi: null, soir: null };
+  entry.date = date;
+  entry[slot] = value || null;
+
+  if (!entry.midi && !entry.soir) {
     await wrapRequest(store.delete(date));
     return null;
   }
-  const entry = { date, recipeId };
   await wrapRequest(store.put(entry));
   return entry;
 }
 
+/** Retourne { [date]: { date, midi, soir } } pour les dates demandées (entrées vides incluses). */
 export async function getWeekEntries(dates) {
   const store = await tx(STORE_WEEK, "readonly");
   const results = {};
   for (const d of dates) {
-    const entry = await wrapRequest(store.get(d));
-    if (entry) results[d] = entry.recipeId;
+    const raw = await wrapRequest(store.get(d));
+    results[d] = normalizeWeekEntry(raw) || { date: d, midi: null, soir: null };
   }
   return results;
 }
 
 export async function getAllWeekEntries() {
   const store = await tx(STORE_WEEK, "readonly");
-  return wrapRequest(store.getAll());
+  const raw = await wrapRequest(store.getAll());
+  return raw.map((r) => normalizeWeekEntry(r)).filter(Boolean);
 }
 
 // ---------------- Réglages ----------------
