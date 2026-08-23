@@ -13,16 +13,27 @@ import { renderSettings } from "./pages/settings.js";
 const PAGE_TITLES = {
   home: "Foodi-Foodou",
   week: "Menu de la semaine",
-  recipes: "Recettes",
+  recipes: "Trouver une recette",
   "recipe-detail": "Recette",
   "recipe-edit": "Recette",
   settings: "Paramètres",
+};
+
+// Associe chaque page au bouton de la barre basse à mettre en surbrillance
+// (les sous-pages d'une section restent rattachées à son bouton).
+const BOTTOM_NAV_SECTION = {
+  week: "week",
+  recipes: "recipes",
+  "recipe-detail": "recipes",
+  "recipe-edit": "recipes",
+  settings: "settings",
 };
 
 const headerEl = document.getElementById("app-header");
 const titleEl = document.getElementById("header-title");
 const backBtn = document.getElementById("header-back");
 const mainEl = document.getElementById("app-main");
+const bottomNavEl = document.getElementById("bottom-nav");
 
 function ctxFor(params) {
   return {
@@ -45,6 +56,11 @@ async function render(page, params) {
   titleEl.textContent = page === "recipe-edit"
     ? (params.id ? "Modifier la recette" : "Nouvelle recette")
     : (PAGE_TITLES[page] || "Foodi-Foodou");
+
+  const activeSection = BOTTOM_NAV_SECTION[page] || null;
+  bottomNavEl.querySelectorAll(".bottom-nav-btn").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.go === activeSection);
+  });
 
   mainEl.innerHTML = "";
   mainEl.scrollTop = 0;
@@ -89,6 +105,10 @@ async function confirmExit() {
 }
 
 backBtn.addEventListener("click", () => routerBack());
+
+bottomNavEl.querySelectorAll(".bottom-nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => routerNavigate(btn.dataset.go));
+});
 
 initRouter({ render, confirmExit });
 

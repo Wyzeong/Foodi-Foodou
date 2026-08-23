@@ -3,6 +3,15 @@
 // l'appareil sauf action explicite de l'utilisateur (export JSON).
 // ============================================================
 
+// Rayons de la bibliothèque de recettes (voir page "Trouver une recette")
+export const RECIPE_CATEGORIES = [
+  { key: "aperitif", label: "Apéritif" },
+  { key: "entree", label: "Entrée" },
+  { key: "plat", label: "Plat" },
+  { key: "dessert", label: "Dessert" },
+  { key: "boisson", label: "Boisson" },
+];
+
 const DB_NAME = "moncarnet-db";
 const DB_VERSION = 1;
 
@@ -68,6 +77,7 @@ export async function saveRecipe(recipe) {
   const toSave = {
     id: recipe.id || uid(),
     title: recipe.title || "Sans titre",
+    category: recipe.category || "plat",
     tags: recipe.tags || [],
     ingredients: recipe.ingredients || [],
     steps: recipe.steps || [],

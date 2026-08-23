@@ -1,5 +1,5 @@
 import { icon } from "../icons.js";
-import { getRecipe, saveRecipe } from "../db.js";
+import { getRecipe, saveRecipe, RECIPE_CATEGORIES } from "../db.js";
 import { escapeHTML, toast } from "../ui.js";
 import { getSetting } from "../db.js";
 
@@ -21,6 +21,8 @@ const UNIT_OPTIONS = [
 function normalizeTag(t) {
   return String(t || "").trim().replace(/^#+/, "");
 }
+
+// Rayons de la bibliothèque de recettes, importés depuis db.js (source unique).
 
 function stripHTML(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
@@ -51,6 +53,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
   const state = {
     id: existing?.id || null,
     title: existing?.title || "",
+    category: existing?.category || "plat",
     tags: existing?.tags?.length ? [...existing.tags] : [],
     image: existing?.image || null,
     notes: existing?.notes || "",
@@ -77,6 +80,13 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       <div class="field">
         <label>Titre</label>
         <input type="text" id="f-title" value="${escapeHTML(state.title)}" placeholder="Ex : Tarte aux pommes" />
+      </div>
+
+      <div class="field">
+        <label>Rayon de la bibliothèque</label>
+        <select id="f-category">
+          ${RECIPE_CATEGORIES.map((c) => `<option value="${c.key}" ${state.category === c.key ? "selected" : ""}>${c.label}</option>`).join("")}
+        </select>
       </div>
 
       <div class="field">
@@ -525,6 +535,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       return;
     }
     const tags = state.tags.map(normalizeTag).filter(Boolean);
+    const category = main.querySelector("#f-category").value;
     const notes = main.querySelector("#f-notes").value;
     const ingredients = state.ingredients
       .filter((i) => i.name.trim())
@@ -535,6 +546,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
     const saved = await saveRecipe({
       id: state.id,
       title,
+      category,
       tags,
       notes,
       ingredients,

@@ -68,6 +68,7 @@
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bottom-nav-height: 60px;
 }
 
 * { box-sizing: border-box; }
@@ -170,11 +171,47 @@ svg { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em; 
 
 main {
   flex: 1;
-  padding: var(--space-4) var(--space-4) calc(var(--space-7) + var(--safe-bottom));
+  padding: var(--space-4) var(--space-4) calc(var(--bottom-nav-height) + var(--space-7) + var(--safe-bottom));
   max-width: 640px;
   width: 100%;
   margin: 0 auto;
 }
+
+/* ---------- Barre de navigation basse permanente ---------- */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50;
+  display: flex;
+  background: var(--color-primary);
+  background-image: repeating-linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.05) 0px, rgba(255, 255, 255, 0.05) 3px,
+    transparent 3px, transparent 9px
+  );
+  border-top: 3px dashed rgba(251, 243, 228, 0.35);
+  padding-bottom: var(--safe-bottom);
+  box-shadow: 0 -4px 14px rgba(59, 42, 30, 0.25);
+}
+.bottom-nav-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 4px 7px;
+  height: var(--bottom-nav-height);
+  color: rgba(251, 243, 228, 0.65);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+.bottom-nav-btn svg { width: 21px; height: 21px; }
+.bottom-nav-btn.active { color: var(--color-surface); }
+.bottom-nav-btn.active svg { color: var(--color-accent); }
+.bottom-nav-btn:active { background: rgba(255, 255, 255, 0.08); }
 
 /* ---------- Accueil : écusson brodé façon "RECETTES" ---------- */
 .home-hero {
@@ -709,7 +746,7 @@ main {
 .fab {
   position: fixed;
   right: var(--space-4);
-  bottom: calc(var(--space-5) + var(--safe-bottom));
+  bottom: calc(var(--bottom-nav-height) + var(--space-4) + var(--safe-bottom));
   width: 56px; height: 56px;
   border-radius: 50%;
   background: var(--color-accent);
@@ -794,7 +831,7 @@ main {
 .toast {
   position: fixed;
   left: 50%;
-  bottom: calc(var(--space-6) + var(--safe-bottom));
+  bottom: calc(var(--bottom-nav-height) + var(--space-4) + var(--safe-bottom));
   transform: translateX(-50%);
   background: var(--color-primary-dark);
   color: var(--color-surface);
@@ -822,4 +859,158 @@ main {
 
 @media (min-width: 480px) {
   .tile-grid { grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   Bibliothèque de recettes ("Trouver une recette")
+   Chaque recette est un livre, rangé par rayon sur une
+   étagère en bois. Cf photo de référence du meuble tricoté.
+   ========================================================= */
+
+.shelf-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.shelf-toolbar .chip-row { flex: 1; margin-bottom: 0; padding-bottom: 0; }
+
+.search-panel {
+  margin-bottom: var(--space-4);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 2px dashed var(--color-line);
+  border-radius: var(--radius-m);
+}
+.search-panel .chip-row { margin: var(--space-2) 0 0; padding-bottom: 0; }
+
+.bookcase {
+  background: linear-gradient(180deg, #4A3320 0%, #3A2717 100%);
+  border-radius: var(--radius-m);
+  padding: 14px 10px 10px;
+  box-shadow: var(--shadow-pop), inset 0 0 0 4px rgba(0,0,0,0.15);
+  margin-bottom: var(--space-5);
+}
+.bookcase.single-shelf { padding-bottom: 14px; }
+
+.shelf-section { margin-bottom: 16px; }
+.shelf-section:last-child { margin-bottom: 6px; }
+
+.shelf-plaque-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.shelf-plaque {
+  display: inline-block;
+  background: var(--color-accent);
+  color: #3A2717;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.03em;
+  padding: 4px 18px;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.35);
+}
+
+.shelf-books {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 4px 6px;
+  scrollbar-width: none;
+  min-height: 150px;
+}
+.shelf-books::-webkit-scrollbar { display: none; }
+.shelf-books.wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  justify-content: center;
+  gap: 6px;
+}
+
+.shelf-plank {
+  height: 12px;
+  border-radius: 2px;
+  margin-top: -2px;
+  background-color: #6B4728;
+  background-image: repeating-linear-gradient(90deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 2px, transparent 2px, transparent 22px);
+  box-shadow: 0 3px 6px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.shelf-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 130px;
+  color: rgba(251, 243, 228, 0.55);
+  font-size: 0.82rem;
+  font-style: italic;
+  text-align: center;
+  padding: 0 var(--space-4);
+}
+
+.book-spine {
+  position: relative;
+  flex-shrink: 0;
+  width: 50px;
+  height: 148px;
+  border-radius: 4px 4px 2px 2px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12px;
+  box-shadow:
+    inset -4px 0 8px rgba(0,0,0,0.28),
+    inset 2px 0 0 rgba(255,255,255,0.08),
+    0 3px 5px rgba(0,0,0,0.35);
+}
+.shelf-books.wrap .book-spine { height: 172px; width: 56px; }
+.book-spine:active { transform: translateY(2px); }
+
+.book-label {
+  background: var(--color-surface);
+  border: 1px dashed rgba(59, 42, 30, 0.4);
+  border-radius: 3px;
+  padding: 8px 3px;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  max-height: 122px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+.shelf-books.wrap .book-label { max-height: 146px; }
+.book-title {
+  font-family: var(--font-manuscript-body);
+  font-size: 0.92rem;
+  line-height: 1.15;
+  color: var(--color-ink);
+  white-space: nowrap;
+}
+
+.add-book-spine {
+  flex-shrink: 0;
+  width: 50px;
+  height: 148px;
+  border-radius: 4px;
+  border: 2px dashed rgba(251, 243, 228, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(251, 243, 228, 0.6);
+}
+.add-book-spine svg { width: 22px; height: 22px; }
+
+@media (min-width: 480px) {
+  .book-spine { width: 58px; height: 168px; }
+  .book-label { max-height: 138px; }
+  .shelf-books.wrap .book-spine { width: 64px; height: 190px; }
+  .shelf-books.wrap .book-label { max-height: 160px; }
 }
