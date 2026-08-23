@@ -334,6 +334,17 @@ main {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.leftover-tag {
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-accent-dark);
+  background: var(--color-bg-alt);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 4px;
+}
 .day-body .empty-label { color: var(--color-ink-muted); font-size: 0.92rem; font-style: italic; }
 .day-body .chevron { color: var(--color-ink-muted); flex-shrink: 0; }
 

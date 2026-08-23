@@ -71,6 +71,7 @@ export async function saveRecipe(recipe) {
     tags: recipe.tags || [],
     ingredients: recipe.ingredients || [],
     steps: recipe.steps || [],
+    cookingSteps: recipe.cookingSteps || [],
     image: recipe.image || null, // dataURL base64, stocké localement
     source: recipe.source || { type: "manual" },
     transcript: recipe.transcript || null,

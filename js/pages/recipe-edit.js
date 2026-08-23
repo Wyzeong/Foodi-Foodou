@@ -56,6 +56,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
     notes: existing?.notes || "",
     ingredients: existing?.ingredients?.length ? existing.ingredients.map((i) => ({ ...i, _key: uid() })) : [{ name: "", quantity: "", unit: "", _key: uid() }],
     steps: existing?.steps?.length ? existing.steps.map((s) => ({ text: s, _key: uid() })) : [{ text: "", _key: uid() }],
+    cookingSteps: existing?.cookingSteps?.length ? existing.cookingSteps.map((s) => ({ text: s, _key: uid() })) : [{ text: "", _key: uid() }],
     source: existing?.source || { type: "manual" },
     transcript: existing?.transcript || "",
   };
@@ -99,6 +100,12 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
         <label>Instructions</label>
         <div id="steps-rows"></div>
         <button class="link-btn" id="add-step" type="button">${icon("plus")} Ajouter une instruction</button>
+      </div>
+
+      <div class="field">
+        <label>Cuisson</label>
+        <div id="cooking-rows"></div>
+        <button class="link-btn" id="add-cooking" type="button">${icon("plus")} Ajouter une étape de cuisson</button>
       </div>
 
       <div class="field">
@@ -332,6 +339,38 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
     drawSteps();
   });
 
+  // ---------- Cuisson dynamique (puces, section séparée) ----------
+  const cookingRows = main.querySelector("#cooking-rows");
+  function drawCookingSteps() {
+    cookingRows.innerHTML = state.cookingSteps
+      .map(
+        (s, i) => `
+      <div class="repeat-row" data-key="${s._key}">
+        <span style="flex-shrink:0;color:var(--color-accent-dark);font-size:1.3em;line-height:2.4;">•</span>
+        <textarea class="cooking-text" style="min-height:44px;" placeholder="Ex : Four à 180°C, 25 minutes">${escapeHTML(s.text)}</textarea>
+        <button class="remove-row-btn" type="button" data-remove="${s._key}">${icon("close")}</button>
+      </div>`
+      )
+      .join("");
+    cookingRows.querySelectorAll(".repeat-row").forEach((row) => {
+      const key = row.dataset.key;
+      const s = state.cookingSteps.find((x) => x._key === key);
+      row.querySelector(".cooking-text").addEventListener("input", (e) => (s.text = e.target.value));
+    });
+    cookingRows.querySelectorAll("[data-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        state.cookingSteps = state.cookingSteps.filter((s) => s._key !== btn.dataset.remove);
+        if (!state.cookingSteps.length) state.cookingSteps.push({ text: "", _key: uid() });
+        drawCookingSteps();
+      });
+    });
+  }
+  drawCookingSteps();
+  main.querySelector("#add-cooking").addEventListener("click", () => {
+    state.cookingSteps.push({ text: "", _key: uid() });
+    drawCookingSteps();
+  });
+
   // ---------- Import depuis internet (texte) ----------
   main.querySelector("#fetch-url").addEventListener("click", async () => {
     const url = main.querySelector("#import-url").value.trim();
@@ -491,6 +530,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       .filter((i) => i.name.trim())
       .map((i) => ({ name: i.name.trim(), quantity: i.quantity.trim(), unit: i.unit.trim() }));
     const steps = state.steps.map((s) => s.text.trim()).filter(Boolean);
+    const cookingSteps = state.cookingSteps.map((s) => s.text.trim()).filter(Boolean);
 
     const saved = await saveRecipe({
       id: state.id,
@@ -499,6 +539,7 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       notes,
       ingredients,
       steps,
+      cookingSteps,
       image: state.image,
       source: state.source,
       transcript: state.transcript || null,

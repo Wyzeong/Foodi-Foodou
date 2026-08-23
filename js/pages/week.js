@@ -1,6 +1,6 @@
 import { icon } from "../icons.js";
 import { getAllRecipes, getWeekEntries, setMealSlot } from "../db.js";
-import { openSheet, confirmSheet, toast } from "../ui.js";
+import { openSheet, confirmSheet, toast, pluralizeUnit } from "../ui.js";
 
 const DOW_LABELS_MON_FIRST = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const SLOT_LABELS = { midi: "Midi", soir: "Soir" };
@@ -42,18 +42,21 @@ function escapeHTML(str) {
 
 function mealContent(meal, recipeById) {
   if (!meal) return `<span class="empty-label">Libre</span>`;
+  const leftoverTag = meal.leftover ? `<span class="leftover-tag">restes</span>` : "";
   if (meal.type === "recipe") {
     const r = recipeById[meal.recipeId];
     if (!r) return `<span class="empty-label">Recette supprimée</span>`;
     return `<span class="assigned">
         ${r.image ? `<img src="${r.image}" alt="">` : `<span class="placeholder-thumb">${icon("book")}</span>`}
         <span class="recipe-name">${escapeHTML(r.title)}</span>
+        ${leftoverTag}
       </span>`;
   }
   if (meal.type === "custom") {
     return `<span class="assigned">
         <span class="placeholder-thumb">${icon("edit")}</span>
         <span class="recipe-name">${escapeHTML(meal.label)}</span>
+        ${leftoverTag}
       </span>`;
   }
   return `<span class="empty-label">Libre</span>`;
@@ -233,13 +236,13 @@ async function maybeProposeTomorrowLunch(date, meal) {
   const ok = await confirmSheet({
     title: "Reconduire ce menu demain midi ?",
     message: existingLunch
-      ? `Un menu est déjà prévu demain midi (${tomorrowLabel}) — le proposer quand même le remplacera.`
-      : `Mettre le même menu demain midi (${tomorrowLabel}) ?`,
+      ? `Un menu est déjà prévu demain midi (${tomorrowLabel}) — le proposer quand même le remplacera. Comptabilisé comme des restes, il ne sera pas recompté dans la liste de courses.`
+      : `Mettre le même menu demain midi (${tomorrowLabel}) ? Comptabilisé comme des restes, il ne sera pas recompté dans la liste de courses.`,
     confirmLabel: "Oui, reconduire",
   });
 
   if (ok) {
-    await setMealSlot(tomorrow, "midi", meal);
+    await setMealSlot(tomorrow, "midi", { ...meal, leftover: true });
     toast(`Menu reconduit pour demain midi${mealLabel ? " : " + mealLabel : ""}`);
   }
 }
@@ -263,6 +266,9 @@ function buildShoppingList(isoDates, entries, recipeById) {
     for (const slot of ["midi", "soir"]) {
       const meal = entry[slot];
       if (!meal) continue;
+      // Un repas reconduit automatiquement (restes du dîner de la veille) ne
+      // représente pas une nouvelle quantité à acheter : on ne le recompte pas.
+      if (meal.leftover) continue;
 
       if (meal.type === "recipe") {
         const r = recipeById[meal.recipeId];
@@ -289,9 +295,11 @@ function buildShoppingList(isoDates, entries, recipeById) {
       if (allNumeric && nonEmpty.length === it.quantities.length) {
         const sum = nonEmpty.reduce((acc, q) => acc + parseQty(q), 0);
         const sumStr = Number.isInteger(sum) ? String(sum) : sum.toFixed(2).replace(/\.?0+$/, "");
-        qtyDisplay = [sumStr, it.unit].filter(Boolean).join(" ");
+        const unit = pluralizeUnit(it.unit, sum);
+        qtyDisplay = [sumStr, unit].filter(Boolean).join(" ");
       } else if (nonEmpty.length) {
-        qtyDisplay = [nonEmpty.join(" + "), it.unit].filter(Boolean).join(" ");
+        const unit = pluralizeUnit(it.unit, nonEmpty.length > 1 ? 2 : nonEmpty[0]);
+        qtyDisplay = [nonEmpty.join(" + "), unit].filter(Boolean).join(" ");
       } else {
         qtyDisplay = it.unit;
       }

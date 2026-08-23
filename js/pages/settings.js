@@ -1,6 +1,6 @@
 import { icon } from "../icons.js";
 import { exportAllData, importAllData, getSetting, setSetting } from "../db.js";
-import { toast, confirmSheet, openSheet, escapeHTML } from "../ui.js";
+import { toast, openSheet, escapeHTML } from "../ui.js";
 import { APP_VERSION } from "../version.js";
 import * as gdrive from "../gdrive.js";
 
@@ -90,9 +90,6 @@ export async function renderSettings(main) {
         ${icon("check")}
       </li>
     </ul>
-
-    <h2 class="section-title">Zone de danger</h2>
-    <button class="btn btn-danger btn-block" id="wipe-btn">${icon("trash")} Effacer toutes les données de l'app</button>
   `;
 
   // ---------------- Google Drive ----------------
@@ -224,21 +221,6 @@ export async function renderSettings(main) {
     await setSetting("transcriptionEndpoint", main.querySelector("#s-endpoint").value.trim());
     await setSetting("transcriptionApiKey", main.querySelector("#s-key").value.trim());
     toast("Réglages enregistrés");
-  });
-
-  // ---------------- Zone de danger ----------------
-  main.querySelector("#wipe-btn").addEventListener("click", async () => {
-    const ok = await confirmSheet({
-      title: "Tout effacer ?",
-      message: "Toutes les recettes et le menu de la semaine seront définitivement supprimés de cet appareil. Pense à sauvegarder sur Google Drive avant si besoin.",
-      confirmLabel: "Tout effacer",
-      danger: true,
-    });
-    if (ok) {
-      await importAllData({ recipes: [], weekMenu: [], settings: [] }, "replace");
-      toast("Données effacées");
-      setTimeout(() => location.reload(), 700);
-    }
   });
 }
 

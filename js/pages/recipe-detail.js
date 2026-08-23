@@ -1,6 +1,6 @@
 import { icon } from "../icons.js";
 import { getRecipe, deleteRecipe } from "../db.js";
-import { escapeHTML, confirmSheet, toast } from "../ui.js";
+import { escapeHTML, confirmSheet, toast, pluralizeUnit } from "../ui.js";
 
 export async function renderRecipeDetail(main, { navigate, params, back }) {
   const recipe = await getRecipe(params.id);
@@ -37,7 +37,7 @@ export async function renderRecipeDetail(main, { navigate, params, back }) {
           ${
             (recipe.ingredients || [])
               .map(
-                (i) => `<li><span>${escapeHTML(i.name)}</span><span class="qty">${escapeHTML(i.quantity || "")} ${escapeHTML(i.unit || "")}</span></li>`
+                (i) => `<li><span>${escapeHTML(i.name)}</span><span class="qty">${escapeHTML(i.quantity || "")} ${escapeHTML(pluralizeUnit(i.unit, i.quantity))}</span></li>`
               )
               .join("") || "<li>Aucun ingrédient renseigné.</li>"
           }
@@ -55,6 +55,17 @@ export async function renderRecipeDetail(main, { navigate, params, back }) {
         </ul>
       </div>
     </div>
+
+    ${
+      recipe.cookingSteps && recipe.cookingSteps.length
+        ? `<div class="manuscript-page">
+            <h2 class="manuscript-section-title">Cuisson</h2>
+            <ul class="step-list manuscript-body">
+              ${recipe.cookingSteps.map((s) => `<li><span class="step-bullet">•</span><span>${escapeHTML(s)}</span></li>`).join("")}
+            </ul>
+          </div>`
+        : ""
+    }
 
     ${
       recipe.notes

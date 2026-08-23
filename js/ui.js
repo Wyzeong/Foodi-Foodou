@@ -56,3 +56,22 @@ export function escapeHTML(str) {
     "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
   }[c]));
 }
+
+// Unités "mot" (par opposition aux abréviations comme g/kg/ml/cl/l/c. à café)
+// dont le pluriel français est régulier (ajout d'un simple "s").
+const PLURALIZABLE_UNITS = [
+  "unité", "tranche", "gousse", "botte", "sachet",
+  "verre", "tasse", "pot", "boîte", "feuille", "brin", "bouquet", "pincée",
+];
+
+/** Accorde automatiquement une unité au pluriel si la quantité l'exige
+ *  (ex: "gousse" + 3 -> "gousses"). N'affecte pas les abréviations
+ *  (g, kg, ml, cl, l, c. à café...) ni les unités personnalisées inconnues. */
+export function pluralizeUnit(unit, quantity) {
+  if (!unit) return unit;
+  const num = parseFloat(String(quantity ?? "").replace(",", "."));
+  if (isNaN(num) || Math.abs(num) <= 1) return unit;
+  const lower = unit.trim().toLowerCase();
+  if (!PLURALIZABLE_UNITS.includes(lower)) return unit;
+  return unit.endsWith("s") ? unit : unit + "s";
+}
