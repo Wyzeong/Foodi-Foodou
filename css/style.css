@@ -1,0 +1,594 @@
+/* =========================================================
+   MonCarnet — thème visuel unique, posé une fois ici.
+   Inspiration : carnet de recettes relié, papier chaud,
+   accent safran, vert profond. Pas de dépendance externe,
+   uniquement des polices système (contrainte 100% offline).
+   ========================================================= */
+:root {
+  /* Couleurs */
+  --color-bg: #FBF8F2;           /* papier chaud */
+  --color-bg-alt: #F2ECDD;       /* papier légèrement plus soutenu */
+  --color-surface: #FFFFFF;
+  --color-ink: #2B2620;          /* texte principal */
+  --color-ink-muted: #746C5E;    /* texte secondaire */
+  --color-primary: #2F4B3C;      /* vert profond (identité) */
+  --color-primary-dark: #1F3428;
+  --color-accent: #D9A441;       /* safran (accent unique) */
+  --color-accent-dark: #B9862C;
+  --color-line: #E4DCC8;         /* filets / séparateurs */
+  --color-danger: #B3452C;       /* brique, pour suppr/erreurs */
+  --color-today: #FCEFCF;        /* surbrillance jour actuel */
+
+  /* Typographie — piles système uniquement (offline garanti) */
+  --font-display: Georgia, "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
+  --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Échelle */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --radius-s: 8px;
+  --radius-m: 14px;
+  --radius-l: 22px;
+
+  --shadow-card: 0 2px 10px rgba(43, 38, 32, 0.08);
+  --shadow-pop: 0 8px 28px rgba(43, 38, 32, 0.18);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overscroll-behavior-y: none; /* évite le "pull to refresh" natif qui casse l'app-feel */
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+input, textarea {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  color: var(--color-primary-dark);
+  margin: 0 0 var(--space-2) 0;
+  line-height: 1.15;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+}
+
+a { color: inherit; text-decoration: none; }
+
+#app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---------- En-tête commun ---------- */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: calc(var(--space-3) + var(--safe-top)) var(--space-4) var(--space-3);
+  background: var(--color-primary);
+  color: var(--color-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.app-header h1 {
+  color: var(--color-bg);
+  font-size: 1.2rem;
+  flex: 1;
+  margin: 0;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--color-bg);
+  flex-shrink: 0;
+}
+.icon-btn:active { background: rgba(255,255,255,0.15); }
+.icon-btn svg { width: 22px; height: 22px; }
+
+/* Bouton retour visible — nécessaire sur iOS où il n'y a pas de
+   geste système de retour dans une web app installée. */
+.back-btn { margin-left: calc(var(--space-2) * -1); }
+
+main {
+  flex: 1;
+  padding: var(--space-4) var(--space-4) calc(var(--space-7) + var(--safe-bottom));
+  max-width: 640px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* ---------- Accueil ---------- */
+.home-hero {
+  text-align: center;
+  padding: var(--space-5) 0 var(--space-6);
+}
+.home-hero .stamp {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-ink-muted);
+  font-size: 0.95rem;
+}
+.home-hero h1 {
+  font-size: 2rem;
+  color: var(--color-primary-dark);
+}
+
+.tile-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.tile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-left: 6px solid var(--color-accent);
+  border-radius: var(--radius-m);
+  padding: var(--space-5);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  width: 100%;
+}
+.tile:active { transform: scale(0.98); }
+.tile .tile-icon {
+  width: 46px; height: 46px;
+  flex-shrink: 0;
+  color: var(--color-primary);
+}
+.tile .tile-text h2 {
+  font-size: 1.1rem;
+  margin-bottom: 2px;
+}
+.tile .tile-text p {
+  margin: 0;
+  color: var(--color-ink-muted);
+  font-size: 0.88rem;
+}
+
+/* ---------- Semaine (calendrier hebdo) ---------- */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+.week-nav .week-label {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--color-primary-dark);
+}
+.week-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.day-card {
+  display: flex;
+  align-items: stretch;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+}
+.day-card.is-today { background: var(--color-today); border-color: var(--color-accent); }
+.day-date {
+  width: 64px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3);
+  border-right: 1px solid var(--color-line);
+}
+.day-date .dow { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-ink-muted); }
+.day-date .num { font-family: var(--font-display); font-size: 1.4rem; color: var(--color-primary-dark); }
+.day-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  gap: var(--space-2);
+  min-width: 0;
+}
+.day-body .assigned {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.day-body .assigned img {
+  width: 40px; height: 40px; border-radius: var(--radius-s); object-fit: cover; flex-shrink: 0;
+}
+.day-body .assigned .placeholder-thumb {
+  width: 40px; height: 40px; border-radius: var(--radius-s); background: var(--color-bg-alt);
+  display:flex; align-items:center; justify-content:center; color: var(--color-ink-muted); flex-shrink:0;
+}
+.day-body .recipe-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.day-body .empty-label { color: var(--color-ink-muted); font-size: 0.92rem; font-style: italic; }
+.day-body .chevron { color: var(--color-ink-muted); flex-shrink: 0; }
+
+/* ---------- Livre de recettes ---------- */
+.toolbar {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+}
+.search-input {
+  flex: 1;
+  min-width: 140px;
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font-size: 0.95rem;
+}
+.chip-row {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-3);
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.chip-row::-webkit-scrollbar { display: none; }
+.chip {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+  white-space: nowrap;
+}
+.chip.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-bg);
+}
+
+.recipe-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-3);
+}
+.recipe-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+.recipe-card .thumb {
+  aspect-ratio: 4/3;
+  background: var(--color-bg-alt);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-muted);
+  overflow: hidden;
+}
+.recipe-card .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.recipe-card .info { padding: var(--space-3); }
+.recipe-card h3 {
+  font-size: 0.98rem;
+  margin-bottom: 4px;
+}
+.recipe-card .meta {
+  font-size: 0.78rem;
+  color: var(--color-ink-muted);
+}
+
+.empty-state {
+  text-align: center;
+  padding: var(--space-7) var(--space-4);
+  color: var(--color-ink-muted);
+}
+.empty-state svg { width: 64px; height: 64px; color: var(--color-line); margin-bottom: var(--space-3); }
+
+/* ---------- Fiche recette ---------- */
+.recipe-hero {
+  aspect-ratio: 16/9;
+  background: var(--color-bg-alt);
+  border-radius: var(--radius-m);
+  overflow: hidden;
+  margin-bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-muted);
+}
+.recipe-hero img { width: 100%; height: 100%; object-fit: cover; }
+.tag-row {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-4);
+}
+.tag {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--color-bg-alt);
+  color: var(--color-primary-dark);
+  font-size: 0.78rem;
+}
+.section-title {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: var(--space-5) 0 var(--space-3);
+  padding-bottom: var(--space-2);
+  border-bottom: 2px solid var(--color-accent);
+  display: inline-block;
+}
+.ingredient-list, .step-list {
+  list-style: none;
+  margin: 0; padding: 0;
+}
+.ingredient-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px dashed var(--color-line);
+}
+.ingredient-list li .qty { color: var(--color-ink-muted); flex-shrink: 0; margin-left: var(--space-3); }
+.step-list li {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px dashed var(--color-line);
+}
+.step-list .step-num {
+  font-family: var(--font-display);
+  color: var(--color-accent-dark);
+  font-weight: bold;
+  flex-shrink: 0;
+  width: 24px;
+}
+
+/* ---------- Formulaires ---------- */
+.field { margin-bottom: var(--space-4); }
+.field label {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+  margin-bottom: var(--space-1);
+}
+.field input[type=text], .field input[type=url], .field input[type=number],
+.field input[type=date], .field input[type=password], .field textarea, .field select {
+  width: 100%;
+  padding: 10px var(--space-3);
+  border-radius: var(--radius-s);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font-family: inherit;
+  font-size: 0.98rem;
+}
+.field textarea { min-height: 90px; resize: vertical; }
+.repeat-row {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  align-items: center;
+}
+.repeat-row input { flex: 1; }
+.repeat-row .qty-input { width: 70px; flex: none; }
+.repeat-row .unit-input { width: 80px; flex: none; }
+.link-btn {
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: var(--space-2) 0;
+}
+.remove-row-btn {
+  color: var(--color-danger);
+  width: 32px; height: 32px;
+  display: flex; align-items:center; justify-content:center;
+  flex-shrink: 0;
+}
+
+.tab-row {
+  display: flex;
+  border-bottom: 1px solid var(--color-line);
+  margin-bottom: var(--space-4);
+}
+.tab-btn {
+  flex: 1;
+  padding: var(--space-3);
+  text-align: center;
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  font-size: 0.9rem;
+  border-bottom: 3px solid transparent;
+}
+.tab-btn.active {
+  color: var(--color-primary-dark);
+  border-bottom-color: var(--color-accent);
+}
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: 12px var(--space-5);
+  border-radius: var(--radius-s);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.btn-primary { background: var(--color-primary); color: var(--color-bg); }
+.btn-primary:active { background: var(--color-primary-dark); }
+.btn-accent { background: var(--color-accent); color: var(--color-primary-dark); }
+.btn-outline { background: transparent; border: 1px solid var(--color-line); color: var(--color-ink); }
+.btn-danger { background: transparent; color: var(--color-danger); border: 1px solid var(--color-danger); }
+.btn-block { display: flex; width: 100%; }
+.btn-row { display: flex; gap: var(--space-3); margin-top: var(--space-5); }
+.btn-row .btn { flex: 1; }
+
+.fab {
+  position: fixed;
+  right: var(--space-4);
+  bottom: calc(var(--space-5) + var(--safe-bottom));
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  color: var(--color-primary-dark);
+  box-shadow: var(--shadow-pop);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 15;
+}
+.fab svg { width: 26px; height: 26px; }
+.fab:active { transform: scale(0.95); }
+
+/* ---------- Paramètres ---------- */
+.settings-list { list-style: none; padding: 0; margin: 0 0 var(--space-6); background: var(--color-surface); border-radius: var(--radius-m); border: 1px solid var(--color-line); overflow: hidden; }
+.settings-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--color-line);
+}
+.settings-list li:last-child { border-bottom: none; }
+.settings-list .label { font-weight: 600; }
+.settings-list .sub { font-size: 0.82rem; color: var(--color-ink-muted); margin-top: 2px; }
+.version-tag {
+  font-family: var(--font-display);
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+/* ---------- Modale ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 27, 20, 0.5);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+.modal-sheet {
+  background: var(--color-surface);
+  width: 100%;
+  max-width: 640px;
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
+  padding: var(--space-5) var(--space-4) calc(var(--space-5) + var(--safe-bottom));
+  box-shadow: var(--shadow-pop);
+  animation: slideUp 0.2s ease;
+}
+.modal-sheet.center {
+  border-radius: var(--radius-l);
+  margin-bottom: auto;
+  margin-top: auto;
+}
+.modal-sheet h3 { margin-bottom: var(--space-3); }
+.modal-sheet p { color: var(--color-ink-muted); margin-bottom: var(--space-4); }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+.recipe-pick-list { max-height: 50vh; overflow-y: auto; margin-bottom: var(--space-4); }
+.recipe-pick-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+  text-align: left;
+}
+.recipe-pick-item .placeholder-thumb, .recipe-pick-item img {
+  width: 40px; height: 40px; border-radius: var(--radius-s); object-fit: cover; flex-shrink: 0;
+  background: var(--color-bg-alt); display:flex; align-items:center; justify-content:center; color: var(--color-ink-muted);
+}
+
+/* ---------- Toast ---------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(var(--space-6) + var(--safe-bottom));
+  transform: translateX(-50%);
+  background: var(--color-ink);
+  color: var(--color-bg);
+  padding: var(--space-3) var(--space-5);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  box-shadow: var(--shadow-pop);
+  z-index: 200;
+  max-width: 90vw;
+  text-align: center;
+}
+
+/* ---------- Utilitaires ---------- */
+.hidden { display: none !important; }
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,0,0,0.15);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 480px) {
+  .tile-grid { grid-template-columns: 1fr; }
+}
