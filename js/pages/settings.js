@@ -52,6 +52,7 @@ export async function renderSettings(main) {
     <h2 class="section-title">Étiquettes suggérées</h2>
     <p style="color:var(--color-ink-muted);font-size:0.88rem;">
       Personnalise les étiquettes proposées en un clic lors de la création d'une recette.
+      Touche une étiquette pour la modifier, ou la petite croix pour la supprimer directement.
     </p>
     <div id="preset-list" style="margin-bottom:var(--space-3);"></div>
     <div class="repeat-row">
@@ -171,35 +172,68 @@ export async function renderSettings(main) {
 
   function drawPresets() {
     presetListEl.innerHTML = presets.length
-      ? presets
-          .map(
-            (t, i) => `
-        <div class="repeat-row" data-index="${i}">
-          <input type="text" class="preset-edit-input" value="${escapeHTML(t)}" />
-          <button class="remove-row-btn" type="button" data-delete="${i}" title="Supprimer">${icon("trash")}</button>
+      ? `<div class="chip-row" style="flex-wrap:wrap;overflow:visible;padding-bottom:0;">
+          ${presets
+            .map(
+              (t, i) => `
+            <button type="button" class="chip active" data-edit="${i}">
+              #${escapeHTML(t)} ${icon("close", "chip-x")}
+            </button>`
+            )
+            .join("")}
         </div>`
-          )
-          .join("")
       : `<p style="color:var(--color-ink-muted);font-size:0.88rem;">Aucune étiquette suggérée pour l'instant — ajoutes-en ci-dessous.</p>`;
 
-    presetListEl.querySelectorAll(".preset-edit-input").forEach((input) => {
-      const row = input.closest("[data-index]");
-      const i = Number(row.dataset.index);
-      input.addEventListener("change", async () => {
-        const val = input.value.trim();
-        if (!val) { presets.splice(i, 1); } else { presets[i] = val; }
-        await setSetting("tagPresets", presets);
-        drawPresets();
-      });
-    });
-    presetListEl.querySelectorAll("[data-delete]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        presets.splice(Number(btn.dataset.delete), 1);
-        await setSetting("tagPresets", presets);
-        drawPresets();
+    presetListEl.querySelectorAll("[data-edit]").forEach((chip) => {
+      chip.addEventListener("click", (e) => {
+        const i = Number(chip.dataset.edit);
+        // Un clic sur la petite croix supprime directement, sans passer par la fiche.
+        if (e.target.closest(".chip-x")) {
+          presets.splice(i, 1);
+          setSetting("tagPresets", presets);
+          drawPresets();
+          return;
+        }
+        openPresetEditor(i);
       });
     });
   }
+
+  function openPresetEditor(index) {
+    const current = presets[index];
+    const { root, close } = openSheet(
+      `<h3>Modifier l'étiquette</h3>
+       <div class="field">
+         <input type="text" id="preset-edit-input" value="${escapeHTML(current)}" />
+       </div>
+       <div class="btn-row">
+         <button class="btn btn-danger" data-act="delete" type="button">${icon("trash")} Supprimer</button>
+         <button class="btn btn-primary" data-act="save" type="button">${icon("check")} Enregistrer</button>
+       </div>`,
+      { center: true }
+    );
+    const input = root.querySelector("#preset-edit-input");
+    input.focus();
+    input.select();
+
+    root.querySelector('[data-act="save"]').addEventListener("click", async () => {
+      const val = input.value.trim();
+      if (!val) { presets.splice(index, 1); } else { presets[index] = val; }
+      await setSetting("tagPresets", presets);
+      close();
+      drawPresets();
+    });
+    root.querySelector('[data-act="delete"]').addEventListener("click", async () => {
+      presets.splice(index, 1);
+      await setSetting("tagPresets", presets);
+      close();
+      drawPresets();
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); root.querySelector('[data-act="save"]').click(); }
+    });
+  }
+
   drawPresets();
 
   main.querySelector("#preset-add-btn").addEventListener("click", async () => {
