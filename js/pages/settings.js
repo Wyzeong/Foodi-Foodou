@@ -1,6 +1,6 @@
 import { icon } from "../icons.js";
 import { exportAllData, importAllData, getSetting, setSetting } from "../db.js";
-import { toast, openSheet, escapeHTML } from "../ui.js";
+import { toast, openSheet, confirmSheet, escapeHTML } from "../ui.js";
 import { APP_VERSION } from "../version.js";
 import * as gdrive from "../gdrive.js";
 
@@ -185,13 +185,21 @@ export async function renderSettings(main) {
       : `<p style="color:var(--color-ink-muted);font-size:0.88rem;">Aucune étiquette suggérée pour l'instant — ajoutes-en ci-dessous.</p>`;
 
     presetListEl.querySelectorAll("[data-edit]").forEach((chip) => {
-      chip.addEventListener("click", (e) => {
+      chip.addEventListener("click", async (e) => {
         const i = Number(chip.dataset.edit);
-        // Un clic sur la petite croix supprime directement, sans passer par la fiche.
+        // Un clic sur la petite croix supprime directement (après confirmation).
         if (e.target.closest(".chip-x")) {
-          presets.splice(i, 1);
-          setSetting("tagPresets", presets);
-          drawPresets();
+          const ok = await confirmSheet({
+            title: "Supprimer cette étiquette ?",
+            message: `"#${presets[i]}" ne sera plus proposée à la création d'une recette.`,
+            confirmLabel: "Supprimer",
+            danger: true,
+          });
+          if (ok) {
+            presets.splice(i, 1);
+            await setSetting("tagPresets", presets);
+            drawPresets();
+          }
           return;
         }
         openPresetEditor(i);
@@ -224,10 +232,18 @@ export async function renderSettings(main) {
       drawPresets();
     });
     root.querySelector('[data-act="delete"]').addEventListener("click", async () => {
-      presets.splice(index, 1);
-      await setSetting("tagPresets", presets);
       close();
-      drawPresets();
+      const ok = await confirmSheet({
+        title: "Supprimer cette étiquette ?",
+        message: `"#${current}" ne sera plus proposée à la création d'une recette.`,
+        confirmLabel: "Supprimer",
+        danger: true,
+      });
+      if (ok) {
+        presets.splice(index, 1);
+        await setSetting("tagPresets", presets);
+        drawPresets();
+      }
     });
     input.addEventListener("keydown", (e) => {
       if (e.key === "Enter") { e.preventDefault(); root.querySelector('[data-act="save"]').click(); }

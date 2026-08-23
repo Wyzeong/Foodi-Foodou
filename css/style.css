@@ -813,6 +813,59 @@ main {
 @keyframes slideUp { from { transform: translateY(24px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
 .recipe-pick-list { max-height: 50vh; overflow-y: auto; margin-bottom: var(--space-4); }
+
+/* ---------- Liste de courses (avec ajustement "j'en ai déjà") ---------- */
+.shopping-list { list-style: none; margin: 0; padding: 0; }
+.shopping-li {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--color-line);
+}
+.shopping-li .s-name { flex: 1; min-width: 0; }
+.shopping-li .have-field {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  color: var(--color-ink-muted);
+  flex-shrink: 0;
+}
+.shopping-li .have-input {
+  width: 46px;
+  padding: 4px 6px;
+  border: 1px solid var(--color-line);
+  border-radius: 6px;
+  background: var(--color-surface);
+  font-size: 0.85rem;
+  text-align: center;
+  color: var(--color-ink);
+}
+.shopping-li .have-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem;
+  color: var(--color-ink-muted);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.shopping-li .have-checkbox input { accent-color: var(--color-primary); }
+.shopping-li .remaining {
+  min-width: 64px;
+  flex-shrink: 0;
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-primary-dark);
+}
+.shopping-li.covered { opacity: 0.55; }
+.shopping-li.covered .s-name,
+.shopping-li.covered .remaining {
+  text-decoration: line-through;
+  color: var(--color-ink-muted);
+  font-weight: 400;
+}
 .recipe-pick-item {
   width: 100%;
   display: flex;
@@ -958,7 +1011,7 @@ main {
 .book-spine {
   position: relative;
   flex-shrink: 0;
-  width: 50px;
+  width: 62px;
   height: 148px;
   border-radius: 4px 4px 2px 2px;
   display: flex;
@@ -970,7 +1023,7 @@ main {
     inset 2px 0 0 rgba(255,255,255,0.08),
     0 3px 5px rgba(0,0,0,0.35);
 }
-.shelf-books.wrap .book-spine { height: 172px; width: 56px; }
+.shelf-books.wrap .book-spine { height: 172px; width: 68px; }
 .book-spine:active { transform: translateY(2px); }
 
 .book-label {
@@ -981,6 +1034,7 @@ main {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   max-height: 122px;
+  max-width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -992,7 +1046,8 @@ main {
   font-size: 0.92rem;
   line-height: 1.15;
   color: var(--color-ink);
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .add-book-spine {
@@ -1009,8 +1064,8 @@ main {
 .add-book-spine svg { width: 22px; height: 22px; }
 
 @media (min-width: 480px) {
-  .book-spine { width: 58px; height: 168px; }
+  .book-spine { width: 70px; height: 168px; }
   .book-label { max-height: 138px; }
-  .shelf-books.wrap .book-spine { width: 64px; height: 190px; }
+  .shelf-books.wrap .book-spine { width: 78px; height: 190px; }
   .shelf-books.wrap .book-label { max-height: 160px; }
 }

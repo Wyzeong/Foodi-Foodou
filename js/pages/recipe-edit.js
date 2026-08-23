@@ -1,6 +1,6 @@
 import { icon } from "../icons.js";
 import { getRecipe, saveRecipe, RECIPE_CATEGORIES } from "../db.js";
-import { escapeHTML, toast } from "../ui.js";
+import { escapeHTML, toast, confirmSheet } from "../ui.js";
 import { getSetting } from "../db.js";
 
 function uid() {
@@ -304,8 +304,19 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       }
     });
     ingRows.querySelectorAll("[data-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.ingredients = state.ingredients.filter((i) => i._key !== btn.dataset.remove);
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.remove;
+        const ing = state.ingredients.find((i) => i._key === key);
+        if (ing && ing.name.trim()) {
+          const ok = await confirmSheet({
+            title: "Supprimer cet ingrédient ?",
+            message: `"${ing.name.trim()}" sera retiré de la recette.`,
+            confirmLabel: "Supprimer",
+            danger: true,
+          });
+          if (!ok) return;
+        }
+        state.ingredients = state.ingredients.filter((i) => i._key !== key);
         if (!state.ingredients.length) state.ingredients.push({ name: "", quantity: "", unit: "", _key: uid() });
         drawIngredients();
       });
@@ -336,8 +347,19 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       row.querySelector(".step-text").addEventListener("input", (e) => (s.text = e.target.value));
     });
     stepRows.querySelectorAll("[data-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.steps = state.steps.filter((s) => s._key !== btn.dataset.remove);
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.remove;
+        const s = state.steps.find((x) => x._key === key);
+        if (s && s.text.trim()) {
+          const ok = await confirmSheet({
+            title: "Supprimer cette instruction ?",
+            message: "Cette étape de préparation sera retirée de la recette.",
+            confirmLabel: "Supprimer",
+            danger: true,
+          });
+          if (!ok) return;
+        }
+        state.steps = state.steps.filter((s) => s._key !== key);
         if (!state.steps.length) state.steps.push({ text: "", _key: uid() });
         drawSteps();
       });
@@ -368,8 +390,19 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
       row.querySelector(".cooking-text").addEventListener("input", (e) => (s.text = e.target.value));
     });
     cookingRows.querySelectorAll("[data-remove]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        state.cookingSteps = state.cookingSteps.filter((s) => s._key !== btn.dataset.remove);
+      btn.addEventListener("click", async () => {
+        const key = btn.dataset.remove;
+        const s = state.cookingSteps.find((x) => x._key === key);
+        if (s && s.text.trim()) {
+          const ok = await confirmSheet({
+            title: "Supprimer cette étape de cuisson ?",
+            message: "Cette étape sera retirée de la recette.",
+            confirmLabel: "Supprimer",
+            danger: true,
+          });
+          if (!ok) return;
+        }
+        state.cookingSteps = state.cookingSteps.filter((s) => s._key !== key);
         if (!state.cookingSteps.length) state.cookingSteps.push({ text: "", _key: uid() });
         drawCookingSteps();
       });

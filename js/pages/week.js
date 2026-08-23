@@ -1,5 +1,5 @@
 import { icon } from "../icons.js";
-import { getAllRecipes, getWeekEntries, setMealSlot } from "../db.js";
+import { getAllRecipes, getAllSearchTags, getWeekEntries, setMealSlot } from "../db.js";
 import { openSheet, confirmSheet, toast, pluralizeUnit } from "../ui.js";
 
 const DOW_LABELS_MON_FIRST = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
@@ -75,7 +75,7 @@ export async function renderWeek(main, { navigate, params }) {
   const isoDates = days.map(toISODate);
   const todayISO = toISODate(new Date());
 
-  const [entries, recipes] = await Promise.all([getWeekEntries(isoDates), getAllRecipes()]);
+  const [entries, recipes, searchTags] = await Promise.all([getWeekEntries(isoDates), getAllRecipes(), getAllSearchTags()]);
   const recipeById = Object.fromEntries(recipes.map((r) => [r.id, r]));
 
   const weekEnd = days[6];
@@ -140,7 +140,7 @@ export async function renderWeek(main, { navigate, params }) {
       const date = btn.dataset.date;
       const slot = btn.dataset.slot;
       const currentEntry = entries[date] || { midi: null, soir: null };
-      openMealPicker({ date, slot, currentMeal: currentEntry[slot], recipes, recipeById, onDone: rerender });
+      openMealPicker({ date, slot, currentMeal: currentEntry[slot], recipes, recipeById, searchTags, onDone: rerender });
     });
   });
 
@@ -150,27 +150,44 @@ export async function renderWeek(main, { navigate, params }) {
   });
 }
 
-function openMealPicker({ date, slot, currentMeal, recipes, recipeById, onDone }) {
+function openMealPicker({ date, slot, currentMeal, recipes, recipeById, searchTags, onDone }) {
   const dateLabel = new Date(date + "T00:00:00").toLocaleDateString("fr-FR", {
     weekday: "long", day: "numeric", month: "long",
   });
 
-  const listHTML = recipes.length
-    ? recipes
-        .map(
-          (r) => `
+  function recipeListHTML(list) {
+    return list.length
+      ? list
+          .map(
+            (r) => `
         <button class="recipe-pick-item" data-id="${r.id}">
           ${r.image ? `<img src="${r.image}" alt="">` : `<span class="placeholder-thumb">${icon("book")}</span>`}
           <span>${escapeHTML(r.title)}</span>
         </button>`
-        )
-        .join("")
-    : `<p style="padding:var(--space-3) 0;color:var(--color-ink-muted);">Aucune recette dans votre bibliothèque pour le moment.</p>`;
+          )
+          .join("")
+      : `<p style="padding:var(--space-3) 0;color:var(--color-ink-muted);">Aucune recette ne correspond.</p>`;
+  }
 
   const { root, close } = openSheet(`
     <h3 style="text-transform:capitalize">${SLOT_LABELS[slot]} — ${dateLabel}</h3>
     <p>Choisir une recette, ou saisir un menu libre sans recette.</p>
-    <div class="recipe-pick-list">${listHTML}</div>
+
+    <div class="field" style="margin-bottom:var(--space-2);">
+      <input type="text" id="meal-search-input" class="search-input" style="width:100%;" placeholder="Rechercher par nom..." />
+    </div>
+    ${
+      searchTags.length
+        ? `<div class="field" style="margin-bottom:var(--space-2);">
+            <select id="meal-tag-select">
+              <option value="">Toutes les étiquettes</option>
+              ${searchTags.map((t) => `<option value="${escapeHTML(t.toLowerCase())}">#${escapeHTML(t)}</option>`).join("")}
+            </select>
+          </div>`
+        : ""
+    }
+
+    <div class="recipe-pick-list" id="recipe-pick-list">${recipeListHTML(recipes)}</div>
 
     <div class="field" style="margin-top:var(--space-2);">
       <label>Ou menu libre (sans recette)</label>
@@ -185,6 +202,36 @@ function openMealPicker({ date, slot, currentMeal, recipes, recipeById, onDone }
     </div>
   `);
 
+  const listEl = root.querySelector("#recipe-pick-list");
+  const searchInput = root.querySelector("#meal-search-input");
+  const tagSelect = root.querySelector("#meal-tag-select");
+
+  function wireRecipeButtons() {
+    listEl.querySelectorAll("[data-id]").forEach((btn) => {
+      btn.addEventListener("click", () => commitMeal({ type: "recipe", recipeId: btn.dataset.id }));
+    });
+  }
+
+  function refreshList() {
+    const q = searchInput.value.trim().toLowerCase();
+    const tag = tagSelect ? tagSelect.value : "";
+    const filtered = recipes.filter((r) => {
+      if (tag) {
+        const hasTag = (r.tags || []).some((t) => String(t).toLowerCase() === tag);
+        const hasIng = (r.ingredients || []).some((i) => String(i.name).toLowerCase() === tag);
+        if (!hasTag && !hasIng) return false;
+      }
+      if (q && !r.title.toLowerCase().includes(q)) return false;
+      return true;
+    });
+    listEl.innerHTML = recipeListHTML(filtered);
+    wireRecipeButtons();
+  }
+
+  wireRecipeButtons();
+  searchInput.addEventListener("input", refreshList);
+  if (tagSelect) tagSelect.addEventListener("change", refreshList);
+
   async function commitMeal(meal) {
     await setMealSlot(date, slot, meal);
     close();
@@ -195,10 +242,6 @@ function openMealPicker({ date, slot, currentMeal, recipes, recipeById, onDone }
     }
     onDone();
   }
-
-  root.querySelectorAll("[data-id]").forEach((btn) => {
-    btn.addEventListener("click", () => commitMeal({ type: "recipe", recipeId: btn.dataset.id }));
-  });
 
   root.querySelector("#custom-meal-btn").addEventListener("click", () => {
     const label = root.querySelector("#custom-meal-input").value.trim();
@@ -291,33 +334,61 @@ function buildShoppingList(isoDates, entries, recipeById) {
     .map((it) => {
       const nonEmpty = it.quantities.filter((q) => q !== "");
       const allNumeric = nonEmpty.length > 0 && nonEmpty.every((q) => !isNaN(parseQty(q)));
-      let qtyDisplay;
+      let numericTotal = null;
+      let rawDisplay = "";
       if (allNumeric && nonEmpty.length === it.quantities.length) {
-        const sum = nonEmpty.reduce((acc, q) => acc + parseQty(q), 0);
-        const sumStr = Number.isInteger(sum) ? String(sum) : sum.toFixed(2).replace(/\.?0+$/, "");
-        const unit = pluralizeUnit(it.unit, sum);
-        qtyDisplay = [sumStr, unit].filter(Boolean).join(" ");
+        numericTotal = nonEmpty.reduce((acc, q) => acc + parseQty(q), 0);
       } else if (nonEmpty.length) {
         const unit = pluralizeUnit(it.unit, nonEmpty.length > 1 ? 2 : nonEmpty[0]);
-        qtyDisplay = [nonEmpty.join(" + "), unit].filter(Boolean).join(" ");
+        rawDisplay = [nonEmpty.join(" + "), unit].filter(Boolean).join(" ");
       } else {
-        qtyDisplay = it.unit;
+        rawDisplay = it.unit;
       }
-      return { name: it.name, qtyDisplay };
+      return { name: it.name, unit: it.unit, numericTotal, rawDisplay };
     })
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
   return { items, missing };
 }
 
+function formatNum(n) {
+  return Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+}
+
 function showShoppingList({ items, missing }) {
   const bodyHTML = `
     <h3>${icon("cart")} Liste de courses</h3>
-    <div style="max-height:55vh;overflow-y:auto;">
-      <ul class="ingredient-list">
+    <p style="color:var(--color-ink-muted);font-size:0.82rem;margin-top:-8px;">
+      Indique ce que tu as déjà chez toi : la quantité à acheter se recalcule toute seule.
+    </p>
+    <div style="max-height:52vh;overflow-y:auto;">
+      <ul class="shopping-list">
         ${
           items.length
-            ? items.map((it) => `<li><span>${escapeHTML(it.name)}</span><span class="qty">${escapeHTML(it.qtyDisplay)}</span></li>`).join("")
+            ? items
+                .map((it, i) => {
+                  if (it.numericTotal !== null) {
+                    return `
+                    <li class="shopping-li" data-index="${i}">
+                      <span class="s-name">${escapeHTML(it.name)}</span>
+                      <span class="have-field">
+                        <label for="have-${i}">déjà</label>
+                        <input type="number" id="have-${i}" class="have-input" min="0" step="any" placeholder="0" />
+                      </span>
+                      <span class="qty remaining" id="remaining-${i}">${formatNum(it.numericTotal)} ${escapeHTML(pluralizeUnit(it.unit, it.numericTotal))}</span>
+                    </li>`;
+                  }
+                  return `
+                    <li class="shopping-li" data-index="${i}">
+                      <span class="s-name">${escapeHTML(it.name)}</span>
+                      <label class="have-checkbox">
+                        <input type="checkbox" id="covered-${i}" />
+                        j'en ai déjà
+                      </label>
+                      <span class="qty remaining" id="remaining-${i}">${escapeHTML(it.rawDisplay)}</span>
+                    </li>`;
+                })
+                .join("")
             : "<li>Aucun ingrédient à lister pour cette semaine.</li>"
         }
       </ul>
@@ -337,9 +408,41 @@ function showShoppingList({ items, missing }) {
 
   const { root, close } = openSheet(bodyHTML);
   root.querySelector("#close-list-btn").addEventListener("click", close);
+
+  // ---- Recalcul en direct des quantités restantes ----
+  items.forEach((it, i) => {
+    const li = root.querySelector(`.shopping-li[data-index="${i}"]`);
+    const remainingEl = root.querySelector(`#remaining-${i}`);
+
+    if (it.numericTotal !== null) {
+      const haveInput = root.querySelector(`#have-${i}`);
+      haveInput.addEventListener("input", () => {
+        const have = parseFloat(String(haveInput.value).replace(",", ".")) || 0;
+        const remaining = Math.max(0, it.numericTotal - have);
+        if (remaining <= 0) {
+          remainingEl.textContent = "en stock";
+          li.classList.add("covered");
+        } else {
+          remainingEl.textContent = `${formatNum(remaining)} ${pluralizeUnit(it.unit, remaining)}`;
+          li.classList.remove("covered");
+        }
+      });
+    } else {
+      const checkbox = root.querySelector(`#covered-${i}`);
+      checkbox.addEventListener("change", () => {
+        li.classList.toggle("covered", checkbox.checked);
+      });
+    }
+  });
+
   root.querySelector("#copy-list-btn").addEventListener("click", async () => {
     const lines = ["Liste de courses :"];
-    items.forEach((it) => lines.push(`- ${it.name}${it.qtyDisplay ? ` (${it.qtyDisplay})` : ""}`));
+    items.forEach((it, i) => {
+      const li = root.querySelector(`.shopping-li[data-index="${i}"]`);
+      if (li.classList.contains("covered")) return; // déjà en stock, pas besoin d'acheter
+      const remainingText = root.querySelector(`#remaining-${i}`).textContent.trim();
+      lines.push(`- ${it.name}${remainingText ? ` (${remainingText})` : ""}`);
+    });
     if (missing.length) {
       lines.push("");
       missing.forEach((m) => lines.push(`Manque : ${m}`));
