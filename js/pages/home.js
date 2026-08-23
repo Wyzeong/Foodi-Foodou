@@ -5,7 +5,7 @@ export function renderHome(main, { navigate }) {
     <div class="home-hero">
       <div class="patch">
         <span class="patch-icon">${icon("pot")}</span>
-        <h1>MonCarnet</h1>
+        <h1>Foodi-Foodou</h1>
         <span class="stamp">— carnet de recettes —</span>
       </div>
     </div>

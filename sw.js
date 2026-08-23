@@ -1,13 +1,13 @@
 // ============================================================
-// Service Worker — MonCarnet
+// Service Worker — Foodi-Foodou
 //
 // IMPORTANT : CACHE_VERSION doit être identique à APP_VERSION
 // dans js/version.js. Incrémenter les DEUX à chaque mise à jour
 // publiée : c'est ce qui force la mise à jour du cache et donc
 // la mise à jour de l'app installée sur le téléphone.
 // ============================================================
-const CACHE_VERSION = "1.3.1";
-const CACHE_NAME = `moncarnet-cache-v${CACHE_VERSION}`;
+const CACHE_VERSION = "1.4.0";
+const CACHE_NAME = `foodifoodou-cache-v${CACHE_VERSION}`;
 
 // Les chemins ci-dessous sont relatifs à la position de ce fichier,
 // ce qui permet de fonctionner aussi bien à la racine d'un domaine
@@ -23,6 +23,7 @@ const PRECACHE_URLS = [
   "./js/ui.js",
   "./js/icons.js",
   "./js/version.js",
+  "./js/gdrive.js",
   "./js/pages/home.js",
   "./js/pages/week.js",
   "./js/pages/recipes.js",
@@ -49,7 +50,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((names) =>
       Promise.all(
-        names.filter((n) => n.startsWith("moncarnet-cache-") && n !== CACHE_NAME).map((n) => caches.delete(n))
+        names.filter((n) => (n.startsWith("foodifoodou-cache-") || n.startsWith("moncarnet-cache-")) && n !== CACHE_NAME).map((n) => caches.delete(n))
       )
     ).then(() => self.clients.claim())
   );

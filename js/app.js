@@ -11,7 +11,7 @@ import { renderRecipeEdit } from "./pages/recipe-edit.js";
 import { renderSettings } from "./pages/settings.js";
 
 const PAGE_TITLES = {
-  home: "MonCarnet",
+  home: "Foodi-Foodou",
   week: "Menu de la semaine",
   recipes: "Recettes",
   "recipe-detail": "Recette",
@@ -44,7 +44,7 @@ async function render(page, params) {
   }
   titleEl.textContent = page === "recipe-edit"
     ? (params.id ? "Modifier la recette" : "Nouvelle recette")
-    : (PAGE_TITLES[page] || "MonCarnet");
+    : (PAGE_TITLES[page] || "Foodi-Foodou");
 
   mainEl.innerHTML = "";
   mainEl.scrollTop = 0;
@@ -82,7 +82,7 @@ async function render(page, params) {
 
 async function confirmExit() {
   return confirmSheet({
-    title: "Quitter MonCarnet ?",
+    title: "Quitter Foodi-Foodou ?",
     message: "Tu peux revenir quand tu veux, tes données restent sur ton appareil.",
     confirmLabel: "Quitter",
   });
@@ -103,8 +103,8 @@ if ("serviceWorker" in navigator) {
   // Si une nouvelle version est installée en arrière-plan, on informe l'utilisateur
   // (rechargement laissé à son initiative pour ne pas perdre une saisie en cours).
   navigator.serviceWorker.addEventListener("controllerchange", () => {
-    console.log("MonCarnet : nouvelle version active au prochain chargement.");
+    console.log("Foodi-Foodou : nouvelle version active au prochain chargement.");
   });
 }
 
-console.log(`MonCarnet v${APP_VERSION}`);
+console.log(`Foodi-Foodou v${APP_VERSION}`);

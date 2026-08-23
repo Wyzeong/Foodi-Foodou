@@ -207,7 +207,7 @@ export async function exportAllData() {
   const settingsStore = await tx(STORE_SETTINGS, "readonly");
   const settings = await wrapRequest(settingsStore.getAll());
   return {
-    app: "MonCarnet",
+    app: "Foodi-Foodou",
     exportedAt: new Date().toISOString(),
     dbVersion: DB_VERSION,
     recipes,

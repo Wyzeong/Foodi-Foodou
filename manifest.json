@@ -1,6 +1,6 @@
 {
-  "name": "MonCarnet — Recettes & Menu",
-  "short_name": "MonCarnet",
+  "name": "Foodi-Foodou — Recettes & Menu",
+  "short_name": "Foodi-Foodou",
   "description": "Carnet de recettes et menu de la semaine, 100% hors ligne.",
   "start_url": "./index.html",
   "scope": "./",

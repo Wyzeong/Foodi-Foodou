@@ -15,11 +15,8 @@ const UNIT_OPTIONS = [
   "verre", "tasse", "pot", "boîte", "feuille", "brin", "bouquet",
 ];
 
-// Étiquettes suggérées en un clic, en plus des tags personnalisés
-const SUGGESTED_TAGS = [
-  "végétarien", "vegan", "sans gluten", "chaud", "froid",
-  "apéritif", "entrée", "plat", "dessert", "rapide", "économique",
-];
+// Étiquettes suggérées en un clic : gérées par l'utilisateur dans Paramètres
+// (aucune liste par défaut imposée — chargées dynamiquement à l'ouverture).
 
 function normalizeTag(t) {
   return String(t || "").trim().replace(/^#+/, "");
@@ -49,6 +46,7 @@ function deriveStructureEndpoint(transcriptionEndpoint) {
 
 export async function renderRecipeEdit(main, { navigate, replace, params, back }) {
   const existing = params.id ? await getRecipe(params.id) : null;
+  const tagPresets = await getSetting("tagPresets", []);
 
   const state = {
     id: existing?.id || null,
@@ -208,8 +206,12 @@ export async function renderRecipeEdit(main, { navigate, replace, params, back }
   }
 
   function drawSuggestions() {
+    if (!tagPresets.length) {
+      tagSuggestEl.innerHTML = `<span style="font-size:0.8rem;color:var(--color-ink-muted);">Astuce : gère des étiquettes rapides dans Paramètres → Étiquettes suggérées.</span>`;
+      return;
+    }
     const lowerTags = state.tags.map((t) => t.toLowerCase());
-    tagSuggestEl.innerHTML = SUGGESTED_TAGS
+    tagSuggestEl.innerHTML = tagPresets
       .map((s) => `<button type="button" class="chip${lowerTags.includes(s.toLowerCase()) ? " active" : ""}" data-suggest="${escapeHTML(s)}">#${escapeHTML(s)}</button>`)
       .join("");
     tagSuggestEl.querySelectorAll("[data-suggest]").forEach((btn) => {
