@@ -22,12 +22,18 @@ function byTitleAlpha(a, b) {
   return a.title.localeCompare(b.title, "fr");
 }
 
+// Toujours montrer au moins ce nombre d'étagères dans la bibliothèque
+// principale, même si la collection est petite ou vide — pour garder le
+// vrai effet "bibliothèque" plutôt qu'une seule étagère isolée. Un étage
+// supplémentaire s'ajoute naturellement à mesure que la collection grandit.
+const MIN_SHELVES = 5;
+const MAX_SHELVES = 10;
+
 /** Nombre d'étagères pour la bibliothèque principale, selon la taille de la
- *  collection (viser ~3-4 livres par étagère en moyenne, mais avec de la
- *  variance : voir randomChunks ci-dessous). */
+ *  collection (viser ~3-4 livres par étagère en moyenne une fois le minimum
+ *  dépassé, avec de la variance : voir randomSizes ci-dessous). */
 function shelfCountFor(total) {
-  if (total <= 3) return 1;
-  return Math.min(8, Math.max(2, Math.round(total / 3.5)));
+  return Math.min(MAX_SHELVES, Math.max(MIN_SHELVES, Math.round(total / 3.5)));
 }
 
 /** Répartit un total en N tailles volontairement irrégulières (certaines
@@ -61,13 +67,16 @@ function sliceBySizes(arr, sizes) {
 // bibliothèque principale (rayon "Plat"), pour qu'elle reste fixe tant que
 // l'ensemble des recettes de ce rayon ne change pas (ajout/suppression).
 const SHELF_LAYOUT_SETTING_KEY = "platShelfLayout";
+// Incrémenté quand l'algorithme de répartition change, pour invalider les
+// dispositions déjà mémorisées avec l'ancienne logique.
+const LAYOUT_VERSION = "v2";
 
 /** Renvoie une répartition (tableau de tailles) stable pour la liste de
  *  recettes fournie : si elle a déjà été calculée pour exactement le même
  *  ensemble de recettes, la réutilise ; sinon en tire une nouvelle et la
  *  mémorise. */
 async function getStableShelfSizes(platRecipes) {
-  const signature = platRecipes.map((r) => r.id).sort().join(",");
+  const signature = LAYOUT_VERSION + ":" + platRecipes.map((r) => r.id).sort().join(",");
   const stored = await getSetting(SHELF_LAYOUT_SETTING_KEY, null);
   if (stored && stored.signature === signature) {
     return stored.sizes;
@@ -149,12 +158,18 @@ export async function renderRecipes(main, { navigate }) {
     return true;
   }
 
-  function shelfSectionHTML(books, { plaque } = {}) {
+  function shelfSectionHTML(books, { plaque, emptyMessage } = {}) {
     return `
       <div class="shelf-section">
         ${plaque ? `<div class="shelf-plaque-row"><span class="shelf-plaque">${plaque}</span></div>` : ""}
         <div class="shelf-books ${plaque ? "wrap" : ""}">
-          ${books.length ? books.map(bookSpineHTML).join("") : `<div class="shelf-empty">Aucune recette ici pour l'instant.</div>`}
+          ${
+            books.length
+              ? books.map(bookSpineHTML).join("")
+              : emptyMessage
+              ? `<div class="shelf-empty">${emptyMessage}</div>`
+              : ""
+          }
         </div>
         <div class="shelf-plank"></div>
       </div>`;
@@ -178,7 +193,17 @@ export async function renderRecipes(main, { navigate }) {
       const chunks = sliceBySizes(filtered, sizes);
       bookcaseHTML = `
         <div class="bookcase">
-          ${chunks.map((chunk) => shelfSectionHTML(chunk)).join("")}
+          ${chunks
+            .map((chunk, i) =>
+              shelfSectionHTML(chunk, {
+                emptyMessage: i === 0 && filtered.length === 0
+                  ? (isFiltering
+                      ? "Aucune recette ne correspond à ta recherche."
+                      : "Aucune recette dans \"Plat\" pour l'instant — touche le + pour en ajouter une.")
+                  : null,
+              })
+            )
+            .join("")}
         </div>`;
     } else {
       // Bibliothèque du rayon sélectionné : uniquement ses recettes, triées alpha.
@@ -186,7 +211,7 @@ export async function renderRecipes(main, { navigate }) {
       const filtered = (byCategory[shelf.key] || []).filter(recipeMatchesSearch).sort(byTitleAlpha);
       bookcaseHTML = `
         <div class="bookcase single-shelf">
-          ${shelfSectionHTML(filtered, { plaque: shelf.label })}
+          ${shelfSectionHTML(filtered, { plaque: shelf.label, emptyMessage: "Aucune recette dans ce rayon pour l'instant." })}
         </div>`;
     }
 
